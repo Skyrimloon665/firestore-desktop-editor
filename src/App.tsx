@@ -172,7 +172,8 @@ export default function App() {
       showStatus("Por favor conéctese a una base de datos o use el Modo Demo primero.", "error");
       return;
     }
-    loadDocumentsIntoState(path ?? collectionPath, connectionMode, projectId);
+    const targetPath = typeof path === "string" ? path : collectionPath;
+    loadDocumentsIntoState(targetPath, connectionMode, projectId);
   };
 
   const handleStartEditField = (key: string, value: any) => {
