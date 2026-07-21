@@ -56,6 +56,7 @@ export default function App() {
   const [rawJsonText, setRawJsonText] = useState("");
 
   const [collectionPath, setCollectionPath] = useState("");
+  const [rootCollections, setRootCollections] = useState<DocData[]>([]);
   const [documents, setDocuments] = useState<DocData[]>([]);
   const [selectedDocId, setSelectedDocId] = useState<string | null>(null);
   const [searchFilter, setSearchFilter] = useState("");
@@ -117,9 +118,10 @@ export default function App() {
         setConnectionMode("cloud");
         setCollectionPath("");
         const rootResult = await firestoreOps.loadRootCollections(res.projectId);
-        setDocuments(rootResult.documents);
+        setRootCollections(rootResult.documents || []);
+        setDocuments([]);
         setSelectedDocId(null);
-        showStatus(`Conectado a ${res.projectId} — colecciones cargadas`, "success");
+        showStatus(`Conectado a ${res.projectId} — ${rootResult.documents?.length || 0} colecciones`, "success");
       } else if (res.error) {
         showStatus(res.error, "error");
       }
@@ -149,9 +151,10 @@ export default function App() {
         setJsonPasteOpen(false);
         setCollectionPath("");
         const rootResult = await firestoreOps.loadRootCollections(res.projectId);
-        setDocuments(rootResult.documents);
+        setRootCollections(rootResult.documents || []);
+        setDocuments([]);
         setSelectedDocId(null);
-        showStatus(`Conectado a ${res.projectId} — colecciones cargadas`, "success");
+        showStatus(`Conectado a ${res.projectId} — ${rootResult.documents?.length || 0} colecciones`, "success");
       } else {
         showStatus(res.error || "Fallo en conexión", "error");
       }
@@ -167,6 +170,7 @@ export default function App() {
     setCredentialsName("Simulada (Modo de Prueba)");
     setConnectionMode("demo");
     setCollectionPath(MOCK_COLLECTION);
+    setRootCollections([]);
     showStatus("Modo Demo local activado. Base de datos precargada.", "success");
     const mockDocs = simulatedDb[MOCK_COLLECTION] || INITIAL_MOCK_DOCUMENTS;
     setDocuments(mockDocs);
@@ -179,18 +183,7 @@ export default function App() {
       return;
     }
     const targetPath = typeof path === "string" ? path : collectionPath;
-    if (!targetPath) {
-      if (connectionMode === "cloud") {
-        try {
-          const rootResult = await firestoreOps.loadRootCollections(projectId);
-          setDocuments(rootResult.documents);
-          setSelectedDocId(null);
-        } catch (err: any) {
-          showStatus(`Error: ${err.message}`, "error");
-        }
-      }
-      return;
-    }
+    if (!targetPath) return;
     loadDocumentsIntoState(targetPath, connectionMode, projectId);
   };
 
@@ -287,6 +280,7 @@ export default function App() {
   const handleDisconnect = () => {
     setConnectionMode("none");
     setProjectId("");
+    setRootCollections([]);
     setDocuments([]);
     setSelectedDocId(null);
     showStatus("Desconectado de la base de datos", "info");
@@ -328,6 +322,7 @@ export default function App() {
         <DocumentListPanel
           connectionMode={connectionMode}
           collectionPath={collectionPath}
+          rootCollections={rootCollections}
           searchFilter={searchFilter}
           documents={documents}
           filteredDocs={filteredDocs}
@@ -338,6 +333,12 @@ export default function App() {
           onSearchFilterChange={setSearchFilter}
           onSelectDocument={setSelectedDocId}
           onCreateDocument={handleCreateEmptyDocument}
+          onRefreshRootCollections={async () => {
+            if (connectionMode === "cloud" && projectId) {
+              const rootResult = await firestoreOps.loadRootCollections(projectId);
+              setRootCollections(rootResult.documents || []);
+            }
+          }}
         />
 
         <FieldInspector
