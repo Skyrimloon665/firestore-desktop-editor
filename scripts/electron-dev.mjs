@@ -34,7 +34,7 @@ async function main() {
     await waitForServer();
     console.log("Launching Electron...");
 
-    const electron = spawn("node_modules/.bin/electron", ["dist-electron/main.js"], {
+    const electron = spawn("node_modules/.bin/electron", ["dist-electron/main.cjs"], {
       cwd: ROOT,
       stdio: "inherit",
       shell: process.platform === "win32",

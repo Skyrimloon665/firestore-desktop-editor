@@ -3,7 +3,7 @@
   "private": true,
   "version": "1.0.0",
   "type": "module",
-  "main": "dist-electron/main.js",
+  "main": "dist-electron/main.cjs",
   "scripts": {
     "dev": "tsx server.ts",
     "build": "vite build && esbuild server.ts --bundle --platform=node --format=cjs --packages=external --sourcemap --outfile=dist/server.cjs",
@@ -11,7 +11,7 @@
     "preview": "vite preview",
     "clean": "rm -rf dist dist-electron server.js server.cjs dist-packaged",
     "lint": "tsc --noEmit",
-    "compile:electron": "esbuild electron/main.ts --bundle --platform=node --format=cjs --external:electron --external:firebase-admin --outfile=dist-electron/main.js && esbuild electron/preload.ts --bundle --platform=node --format=cjs --external:electron --outfile=dist-electron/preload.js",
+    "compile:electron": "esbuild electron/main.ts --bundle --platform=node --format=cjs --external:electron --external:firebase-admin --outfile=dist-electron/main.cjs && esbuild electron/preload.ts --bundle --platform=node --format=cjs --external:electron --outfile=dist-electron/preload.cjs",
     "electron:dev": "npm run compile:electron && node scripts/electron-dev.mjs",
     "electron:build": "vite build && npm run compile:electron && electron-builder --win --mac",
     "dist:win": "vite build && npm run compile:electron && electron-builder --win",
