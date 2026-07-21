@@ -139,10 +139,6 @@ export function FieldInspector({
                 {activeDocument.id}
               </code>
             </div>
-            <span className="hidden md:inline-flex items-center gap-1 text-[10px] text-slate-400 dark:text-slate-500 font-mono bg-slate-100 dark:bg-slate-700/50 px-2 py-0.5 rounded border border-slate-200 dark:border-slate-700/50 overflow-x-auto whitespace-nowrap max-w-[320px]">
-              <span className="shrink-0 text-slate-400">Ruta:</span>
-              {collectionPath}
-            </span>
           </div>
 
           <div className="flex items-center gap-2 shrink-0">
