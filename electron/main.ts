@@ -1,10 +1,11 @@
 import electron from "electron";
 const { app, BrowserWindow, ipcMain, dialog } = electron;
+type BrowserWindowType = electron.BrowserWindow;
 import * as path from "path";
 import * as fs from "fs";
 import admin from "firebase-admin";
 
-let mainWindow: BrowserWindow | null = null;
+let mainWindow: BrowserWindowType | null = null;
 let fbAppInstance: admin.app.App | null = null;
 let db: admin.firestore.Firestore | null = null;
 

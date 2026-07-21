@@ -94,11 +94,8 @@ export function FieldInspector({
               Ningún Documento Cargado
             </h3>
             <p className="text-xs text-slate-500 dark:text-slate-400 leading-relaxed font-medium">
-              Ingrese una colección válida en el panel izquierdo (Ej:{" "}
-              <strong className="text-indigo-600 font-mono text-[11px]">
-                movilform-39511.firebaseio.com
-              </strong>
-              ) y presione consultar. O inicie el{" "}
+               Ingrese una colección en el panel izquierdo y presione{" "}
+              <strong className="text-indigo-600">Consultar</strong>. O inicie el{" "}
               <strong className="text-amber-600">Modo Demo</strong> para
               interactuar de inmediato con datos de prueba.
             </p>

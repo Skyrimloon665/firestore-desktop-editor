@@ -1,4 +1,5 @@
-import { Plus, RefreshCw, Info, FileText, ArrowRight, Terminal, FolderOpen } from "lucide-react";
+import { Plus, RefreshCw, Info, FileText, ArrowRight, Terminal, FolderOpen, ChevronDown, ChevronRight } from "lucide-react";
+import { useState } from "react";
 import type { DocData, ConnectionMode } from "../services/types";
 
 interface DocumentListPanelProps {
@@ -30,6 +31,8 @@ export function DocumentListPanel({
   onSelectDocument,
   onCreateDocument,
 }: DocumentListPanelProps) {
+  const [showPathInput, setShowPathInput] = useState(false);
+
   const handleItemClick = (doc: DocData) => {
     if (doc.data?.__subcollection) {
       const base = collectionPath.replace(/\/+$/, "");
@@ -42,40 +45,47 @@ export function DocumentListPanel({
   };
   return (
     <section className="w-80 border-r border-slate-800 bg-slate-900 text-slate-300 flex flex-col shrink-0">
-      <div className="p-4 border-b border-slate-800 bg-slate-900/50 flex flex-col gap-3">
-        <div>
-          <label className="text-[10px] uppercase font-bold tracking-widest text-slate-500 block mb-2">
-            Root Collection Path
-          </label>
-          <div className="flex gap-2">
-            <input
-              type="text"
-              placeholder="Ej: movilform-39511"
-              className="w-full bg-slate-800 border border-slate-700 text-white px-3 py-1.5 rounded text-xs focus:outline-none focus:ring-1 focus:ring-indigo-500 font-mono text-indigo-200 overflow-x-auto whitespace-nowrap"
-              value={collectionPath}
-              onChange={(e) => onCollectionPathChange(e.target.value)}
-              onKeyDown={(e) => { if (e.key === "Enter") onFetchDocuments(); }}
-              spellCheck={false}
-            />
-            <button
-              onClick={onFetchDocuments}
-              disabled={isLoading || connectionMode === "none"}
-              className="bg-slate-700 hover:bg-slate-600 disabled:bg-slate-800 disabled:text-slate-600 p-2 rounded transition-all cursor-pointer text-white"
-              title="Listar Documentos"
-            >
-              <RefreshCw className={`w-3.5 h-3.5 ${isLoading ? "animate-spin" : ""}`} />
-            </button>
-          </div>
-        </div>
+      <div className="p-4 border-b border-slate-800 bg-slate-900/50">
+        <button
+          onClick={() => setShowPathInput((v) => !v)}
+          className="w-full flex items-center gap-1.5 text-[10px] uppercase font-bold tracking-widest text-slate-500 hover:text-slate-300 transition-colors cursor-pointer"
+        >
+          {showPathInput ? <ChevronDown className="w-3 h-3" /> : <ChevronRight className="w-3 h-3" />}
+          Root Collection Path
+        </button>
 
-        <div className="text-[10px] text-slate-400 bg-slate-800 p-2.5 rounded border border-slate-800/80 leading-snug flex items-start gap-1.5">
-          <Info className="w-3.5 text-indigo-400 shrink-0 mt-0.5" />
-          <span>
-            Compatible con nombres exactos de colección como{" "}
-            <code className="text-indigo-300 font-mono">.firebaseio.com</code>.
-            Traspasado directo al SDK de Node.
-          </span>
-        </div>
+        {showPathInput && (
+          <div className="flex flex-col gap-3 mt-3">
+            <div className="flex gap-2">
+              <input
+                type="text"
+                placeholder="Ej: nombre-coleccion"
+                className="w-full bg-slate-800 border border-slate-700 text-white px-3 py-1.5 rounded text-xs focus:outline-none focus:ring-1 focus:ring-indigo-500 font-mono text-indigo-200 overflow-x-auto whitespace-nowrap"
+                value={collectionPath}
+                onChange={(e) => onCollectionPathChange(e.target.value)}
+                onKeyDown={(e) => { if (e.key === "Enter") onFetchDocuments(); }}
+                spellCheck={false}
+              />
+              <button
+                onClick={onFetchDocuments}
+                disabled={isLoading}
+                className="bg-slate-700 hover:bg-slate-600 disabled:bg-slate-800 disabled:text-slate-600 p-2 rounded transition-all cursor-pointer text-white"
+                title="Listar Documentos"
+              >
+                <RefreshCw className={`w-3.5 h-3.5 ${isLoading ? "animate-spin" : ""}`} />
+              </button>
+            </div>
+
+            <div className="text-[10px] text-slate-400 bg-slate-800 p-2.5 rounded border border-slate-800/80 leading-snug flex items-start gap-1.5">
+              <Info className="w-3.5 text-indigo-400 shrink-0 mt-0.5" />
+              <span>
+                Ingrese la ruta de la colección o documento. Las rutas con
+                cantidad impar de segmentos listan documentos; las pares listan
+                subcolecciones.
+              </span>
+            </div>
+          </div>
+        )}
       </div>
 
       <div className="p-3 border-b border-slate-800/80 bg-slate-900 flex items-center justify-between gap-2">

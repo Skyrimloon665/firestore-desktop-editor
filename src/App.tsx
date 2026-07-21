@@ -10,8 +10,8 @@ import { useTheme } from "./hooks/useTheme";
 import { selectCredentialsFile, connectWithCredentialsJson } from "./services/api";
 import type { ConnectionMode, DocData, SimulatedDb } from "./services/types";
 
-const MOCK_PROJECT_ID = "movilform-39511";
-const MOCK_COLLECTION = "movilform-39511.firebaseio.com";
+const MOCK_PROJECT_ID = "demo-project";
+const MOCK_COLLECTION = "demo-collection";
 const INITIAL_MOCK_DOCUMENTS: DocData[] = [
   {
     id: "doc_sensor_01",
@@ -280,6 +280,7 @@ export default function App() {
         connectionMode={connectionMode}
         projectId={projectId}
         credentialsName={credentialsName}
+        collectionPath={collectionPath}
         isLoading={isLoading}
         isElectron={isElectron}
         theme={theme}
@@ -288,6 +289,7 @@ export default function App() {
         onOpenJsonPaste={() => setJsonPasteOpen(true)}
         onActivateDemo={handleActivateDemoMode}
         onDisconnect={handleDisconnect}
+        onCollectionPathChange={setCollectionPath}
       />
 
       <JsonPasteDialog

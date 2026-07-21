@@ -1,11 +1,12 @@
 import type { ConnectionMode, ThemeMode } from "../services/types";
-import { Database, FolderOpen, Cpu, Lock, Sun, Moon, Monitor, FileText } from "lucide-react";
+import { Database, FolderOpen, Cpu, Lock, Sun, Moon, Monitor, FileText, ClipboardCopy, ChevronRight } from "lucide-react";
 import type { ComponentType, SVGProps } from "react";
 
 interface ConnectionHeaderProps {
   connectionMode: ConnectionMode;
   projectId: string;
   credentialsName: string;
+  collectionPath: string;
   isLoading: boolean;
   isElectron: boolean;
   theme: ThemeMode;
@@ -14,6 +15,7 @@ interface ConnectionHeaderProps {
   onOpenJsonPaste: () => void;
   onActivateDemo: () => void;
   onDisconnect: () => void;
+  onCollectionPathChange: (path: string) => void;
 }
 
 const themeIcon: Record<ThemeMode, ComponentType<SVGProps<SVGSVGElement>>> = {
@@ -32,6 +34,7 @@ export function ConnectionHeader({
   connectionMode,
   projectId,
   credentialsName,
+  collectionPath,
   isLoading,
   isElectron,
   theme,
@@ -40,30 +43,38 @@ export function ConnectionHeader({
   onOpenJsonPaste,
   onActivateDemo,
   onDisconnect,
+  onCollectionPathChange,
 }: ConnectionHeaderProps) {
   const ThemeIcon = themeIcon[theme];
+  const pathSegments = collectionPath.split("/").filter(Boolean);
+
+  const handleCopyPath = () => {
+    navigator.clipboard.writeText(collectionPath).catch(() => {});
+  };
+
+  const handleBreadcrumbClick = (index: number) => {
+    const newPath = pathSegments.slice(0, index + 1).join("/");
+    onCollectionPathChange(newPath);
+  };
 
   return (
-    <header className="h-16 bg-white dark:bg-slate-800 border-b border-slate-200 dark:border-slate-700 px-6 flex items-center justify-between shadow-sm shrink-0 z-10">
-      <div className="flex items-center gap-3">
-        <div className="w-8 h-8 bg-indigo-600 rounded flex items-center justify-center text-white">
-          <Database className="w-5 h-5 text-white" />
+    <header className="bg-white dark:bg-slate-800 border-b border-slate-200 dark:border-slate-700 px-6 shadow-sm shrink-0 z-10">
+      <div className="h-16 flex items-center justify-between">
+        <div className="flex items-center gap-3">
+          <div className="w-8 h-8 bg-indigo-600 rounded flex items-center justify-center text-white">
+            <Database className="w-5 h-5 text-white" />
+          </div>
+          <div>
+            <h1 className="text-sm md:text-base font-bold text-slate-900 dark:text-white tracking-tight flex items-center gap-2">
+              Firestore Desktop Editor
+              <span className="text-[10px] bg-indigo-50 dark:bg-indigo-900/40 text-indigo-700 dark:text-indigo-300 font-bold px-2 py-0.5 rounded-full border border-indigo-200 dark:border-indigo-700">
+                {isElectron ? "Electron Host Node" : "Web Preview Gateway"}
+              </span>
+            </h1>
+          </div>
         </div>
-        <div>
-          <h1 className="text-sm md:text-base font-bold text-slate-900 dark:text-white tracking-tight flex items-center gap-2">
-            Firestore Desktop Editor
-            <span className="text-[10px] bg-indigo-50 dark:bg-indigo-900/40 text-indigo-700 dark:text-indigo-300 font-bold px-2 py-0.5 rounded-full border border-indigo-200 dark:border-indigo-700">
-              {isElectron ? "Electron Host Node" : "Web Preview Gateway"}
-            </span>
-          </h1>
-          <p className="text-[10px] text-slate-500 dark:text-slate-400 font-medium -mt-0.5">
-            Inspección de Esquemas y Edición en Tiempo Real para Cuentas de
-            Servicio
-          </p>
-        </div>
-      </div>
 
-      <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2">
         <button
           onClick={() => onThemeChange(themeNext[theme])}
           className="p-2 rounded-lg text-slate-500 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors cursor-pointer"
@@ -126,6 +137,32 @@ export function ConnectionHeader({
           </>
         )}
       </div>
+      </div>
+
+      {connectionMode !== "none" && pathSegments.length > 0 && (
+        <div className="h-7 flex items-center gap-1 pb-1 overflow-x-auto">
+          <div className="flex items-center gap-0.5 text-xs font-mono text-slate-500 dark:text-slate-400 whitespace-nowrap">
+            {pathSegments.map((seg, i) => (
+              <span key={i} className="flex items-center gap-0.5">
+                {i > 0 && <ChevronRight className="w-3 h-3 text-slate-400 shrink-0" />}
+                <button
+                  onClick={() => handleBreadcrumbClick(i)}
+                  className="hover:text-indigo-600 dark:hover:text-indigo-400 hover:bg-slate-100 dark:hover:bg-slate-700 px-1 py-0.5 rounded transition-colors cursor-pointer"
+                >
+                  {seg}
+                </button>
+              </span>
+            ))}
+          </div>
+          <button
+            onClick={handleCopyPath}
+            className="ml-1 p-1 rounded text-slate-400 hover:text-indigo-600 dark:hover:text-indigo-400 hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors cursor-pointer shrink-0"
+            title="Copiar ruta"
+          >
+            <ClipboardCopy className="w-3 h-3" />
+          </button>
+        </div>
+      )}
     </header>
   );
 }
