@@ -1,11 +1,8 @@
-import { app, BrowserWindow, ipcMain, dialog } from "electron";
+import electron from "electron";
+const { app, BrowserWindow, ipcMain, dialog } = electron;
 import * as path from "path";
-import { fileURLToPath } from "url";
 import * as fs from "fs";
 import admin from "firebase-admin";
-
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
 
 let mainWindow: BrowserWindow | null = null;
 let fbAppInstance: admin.app.App | null = null;
