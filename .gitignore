@@ -11,3 +11,6 @@ server.js
 server.cjs
 .env*
 !.env.example
+pnpm-lock.yaml
+pnpm-workspace.yaml
+.npmrc
