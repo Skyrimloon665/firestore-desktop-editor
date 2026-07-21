@@ -1,6 +1,5 @@
 {
   "name": "Firestore Desktop Editor",
   "description": "Visualizador y editor de campos interactivo para Firestore con soporte de cuentas de servicio.",
-  "requestFramePermissions": [],
-  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+  "requestFramePermissions": []
 }

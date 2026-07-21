@@ -1,11 +1,27 @@
 import { app, BrowserWindow, ipcMain, dialog } from "electron";
 import * as path from "path";
+import { fileURLToPath } from "url";
 import * as fs from "fs";
 import admin from "firebase-admin";
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 let mainWindow: BrowserWindow | null = null;
 let fbAppInstance: admin.app.App | null = null;
 let db: admin.firestore.Firestore | null = null;
+
+async function cleanupFirebase() {
+  if (fbAppInstance) {
+    try {
+      await fbAppInstance.delete();
+    } catch {
+      // ignore cleanup errors
+    }
+    fbAppInstance = null;
+    db = null;
+  }
+}
 
 function createWindow() {
   mainWindow = new BrowserWindow({
@@ -20,7 +36,6 @@ function createWindow() {
     autoHideMenuBar: true,
   });
 
-  // In development, load from Vite local server. In production, load the built index.html.
   const isDev = !app.isPackaged;
   if (isDev) {
     mainWindow.loadURL("http://localhost:3000");
@@ -50,21 +65,82 @@ app.on("window-all-closed", () => {
   }
 });
 
+app.on("before-quit", async () => {
+  await cleanupFirebase();
+});
+
+process.on("unhandledRejection", (reason) => {
+  console.error("Unhandled rejection in Electron main:", reason);
+});
+
 // ==========================================
 // IPC HANDDELERS FOR SECURE FIREBASE ADMIN OPERATION
 // ==========================================
 
 // 1. SELECT SERVICE ACCOUNT FILE VIA NATIVE FILE DIALOG
+function normalizePrivateKey(key: string): string {
+  let normalized = key;
+  if (normalized.includes("\\n")) {
+    normalized = normalized.replace(/\\n/g, "\n");
+  }
+  const beginMarker = "-----BEGIN PRIVATE KEY-----";
+  const endMarker = "-----END PRIVATE KEY-----";
+  if (!normalized.includes("\n")) {
+    const start = normalized.indexOf(beginMarker);
+    const end = normalized.indexOf(endMarker);
+    if (start !== -1 && end !== -1) {
+      const header = normalized.slice(0, start + beginMarker.length);
+      const body = normalized.slice(start + beginMarker.length, end);
+      const footer = normalized.slice(end);
+      const bodyLines: string[] = [];
+      for (let i = 0; i < body.length; i += 64) {
+        bodyLines.push(body.slice(i, i + 64));
+      }
+      normalized = header + "\n" + bodyLines.join("\n") + "\n" + footer;
+    }
+  }
+  return normalized;
+}
+
+function toCert(serviceAccount: Record<string, any>) {
+  return {
+    projectId: serviceAccount.project_id,
+    clientEmail: serviceAccount.client_email,
+    privateKey: normalizePrivateKey(serviceAccount.private_key),
+  };
+}
+
+async function initFirebaseFromAccount(serviceAccount: Record<string, any>) {
+  if (fbAppInstance) {
+    await fbAppInstance.delete();
+  }
+  fbAppInstance = admin.initializeApp(
+    { credential: admin.credential.cert(toCert(serviceAccount)) },
+    `app-${serviceAccount.project_id}-${Date.now()}`
+  );
+  db = fbAppInstance.firestore();
+}
+
+function validateServiceAccount(sa: Record<string, any>): string | null {
+  if (!sa.project_id || !sa.private_key || !sa.client_email) {
+    return "El JSON no contiene los campos requeridos (project_id, private_key, client_email).";
+  }
+  try {
+    JSON.stringify(sa);
+  } catch {
+    return "El JSON no es válido.";
+  }
+  return null;
+}
+
 ipcMain.handle("firebase:select-credentials-file", async () => {
   if (!mainWindow) return { success: false, error: "Ventana principal no disponible" };
 
   try {
     const result = await dialog.showOpenDialog(mainWindow, {
       title: "Seleccionar Credenciales de Cuenta de Servicio (.json)",
-      filters: [
-        { name: "JSON Files", extensions: ["json"] }
-      ],
-      properties: ["openFile"]
+      filters: [{ name: "JSON Files", extensions: ["json"] }],
+      properties: ["openFile"],
     });
 
     if (result.canceled || result.filePaths.length === 0) {
@@ -75,61 +151,43 @@ ipcMain.handle("firebase:select-credentials-file", async () => {
     const fileContent = fs.readFileSync(filePath, "utf-8");
     const serviceAccount = JSON.parse(fileContent);
 
-    if (!serviceAccount.project_id || !serviceAccount.private_key || !serviceAccount.client_email) {
-      return { success: false, error: "El archivo JSON no contiene las claves de cuenta de servicio requeridas (project_id, private_key, client_email)." };
-    }
+    const validationError = validateServiceAccount(serviceAccount);
+    if (validationError) return { success: false, error: validationError };
 
-    // Initialize Firebase Admin dynamically
-    if (fbAppInstance) {
-      await fbAppInstance.delete();
-    }
+    await initFirebaseFromAccount(serviceAccount);
 
-    fbAppInstance = admin.initializeApp({
-      credential: admin.credential.cert(serviceAccount)
-    }, `app-${serviceAccount.project_id}-${Date.now()}`);
-
-    db = fbAppInstance.firestore();
-
-    return { 
-      success: true, 
+    return {
+      success: true,
       projectId: serviceAccount.project_id,
-      fileName: path.basename(filePath)
+      fileName: path.basename(filePath),
     };
   } catch (err: any) {
-    console.error("Error al cargar credenciales electrónicas:", err);
+    console.error("Error al cargar credenciales:", err);
     return { success: false, error: err.message || "Error al procesar el archivo de credenciales." };
   }
 });
 
-// 2. CONNECT DIRECTLY WITH RAW CREDENTIALS OBJECT
 ipcMain.handle("firebase:connect-with-credentials-json", async (_event, serviceAccountJsonString: string) => {
   try {
     const serviceAccount = JSON.parse(serviceAccountJsonString);
-    if (!serviceAccount.project_id || !serviceAccount.private_key || !serviceAccount.client_email) {
-      return { success: false, error: "El JSON ingresado no contiene los campos requeridos." };
-    }
+    const validationError = validateServiceAccount(serviceAccount);
+    if (validationError) return { success: false, error: validationError };
 
-    if (fbAppInstance) {
-      await fbAppInstance.delete();
-    }
+    await initFirebaseFromAccount(serviceAccount);
 
-    fbAppInstance = admin.initializeApp({
-      credential: admin.credential.cert(serviceAccount)
-    }, `app-${serviceAccount.project_id}-${Date.now()}`);
-
-    db = fbAppInstance.firestore();
-
-    return { 
-      success: true, 
-      projectId: serviceAccount.project_id 
-    };
+    return { success: true, projectId: serviceAccount.project_id };
   } catch (err: any) {
     console.error("Error en conexión por JSON crudo:", err);
     return { success: false, error: err.message || "Error al deserializar o inicializar Firebase Admin." };
   }
 });
 
-// 3. GET LIST OF DOCUMENTS WITHIN EXACT COLLECTION PATH (No front-end regex parsing, exact string transfer)
+// 3. LIST DOCUMENTS / SUBCOLLECTIONS
+function parsePath(path: string): { segments: string[]; isCollection: boolean } {
+  const segments = path.split("/").filter(Boolean);
+  return { segments, isCollection: segments.length % 2 === 1 };
+}
+
 ipcMain.handle("firebase:list-documents", async (_event, collectionPath: string) => {
   if (!db) {
     return { success: false, error: "No hay una base de datos activa. Conecte sus credenciales primero." };
@@ -139,7 +197,17 @@ ipcMain.handle("firebase:list-documents", async (_event, collectionPath: string)
   }
 
   try {
-    // Access collection directly utilizing original unmodified string paths (eg: 'movilform-39511.firebaseio.com')
+    const { segments, isCollection } = parsePath(collectionPath);
+
+    if (!isCollection) {
+      const collections = await db.doc(collectionPath).listCollections();
+      const documents = collections.map((col) => ({
+        id: col.id + "/",
+        data: { __subcollection: true },
+      }));
+      return { success: true, documents };
+    }
+
     const snapshot = await db.collection(collectionPath).get();
     const documents = snapshot.docs.map(doc => ({
       id: doc.id,
@@ -149,11 +217,22 @@ ipcMain.handle("firebase:list-documents", async (_event, collectionPath: string)
     return { success: true, documents };
   } catch (err: any) {
     console.error("Error al listar documentos de Firestore:", err);
-    return { success: false, error: err.message || "Fallo al consultar la colección en Firestore." };
+    const msg = err.message?.includes("odd number")
+      ? `La ruta "${collectionPath}" tiene ${collectionPath.split("/").filter(Boolean).length} segmentos (par). Las rutas de colección deben tener un número impar de segmentos. Ej: "movilform-39511.firebaseio.com" (1) o "movilform-39511.firebaseio.com/docId/subcol" (3)`
+      : err.message || "Fallo al consultar la colección en Firestore.";
+    return { success: false, error: msg };
   }
 });
 
-// 4. UPDATE INDIVIDUAL RECORD FIELD (Using documentRef.update and native dot/bracket representation)
+// 4. UPDATE FIELD
+function docRefFromPath(collectionPath: string, docId: string) {
+  const segments = collectionPath.split("/").filter(Boolean);
+  if (segments.length % 2 === 0) {
+    return db!.doc(collectionPath);
+  }
+  return db!.collection(collectionPath).doc(docId);
+}
+
 ipcMain.handle("firebase:update-field", async (_event, { collectionPath, docId, fieldKey, fieldValue, fieldType }) => {
   if (!db) {
     return { success: false, error: "Base de datos inactiva." };
@@ -163,7 +242,6 @@ ipcMain.handle("firebase:update-field", async (_event, { collectionPath, docId, 
   }
 
   try {
-    // Direct casting of target JavaScript primitives
     let parsedValue: any = fieldValue;
     if (fieldType === "number") {
       parsedValue = Number(fieldValue);
@@ -182,14 +260,9 @@ ipcMain.handle("firebase:update-field", async (_event, { collectionPath, docId, 
       }
     }
 
-    const docRef = db.collection(collectionPath).doc(docId);
-    
-    // Commit the field update directly using bracket notation
-    await docRef.update({
-      [fieldKey]: parsedValue
-    });
+    const docRef = docRefFromPath(collectionPath, docId);
+    await docRef.update({ [fieldKey]: parsedValue });
 
-    // Retrieve fresh documentation values
     const updatedSnap = await docRef.get();
     const updatedFields = updatedSnap.exists ? updatedSnap.data() : null;
 

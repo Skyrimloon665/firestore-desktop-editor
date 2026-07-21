@@ -11,13 +11,14 @@
     "preview": "vite preview",
     "clean": "rm -rf dist dist-electron server.js server.cjs dist-packaged",
     "lint": "tsc --noEmit",
-    "electron:dev": "npm run build && tsc -p tsconfig.electron.json && electron dist-electron/main.js",
-    "electron:build": "vite build && tsc -p tsconfig.electron.json && electron-builder --win --mac",
-    "dist:win": "vite build && tsc -p tsconfig.electron.json && electron-builder --win",
-    "dist:mac": "vite build && tsc -p tsconfig.electron.json && electron-builder --mac"
+    "compile:electron": "tsc -p tsconfig.electron.json && esbuild electron/preload.ts --bundle --platform=node --format=cjs --external:electron --outfile=dist-electron/preload.js",
+    "electron:dev": "pnpm compile:electron && node scripts/electron-dev.mjs",
+    "electron:build": "vite build && pnpm compile:electron && electron-builder --win --mac",
+    "dist:win": "vite build && pnpm compile:electron && electron-builder --win",
+    "dist:mac": "vite build && pnpm compile:electron && electron-builder --mac"
   },
   "dependencies": {
-    "@google/genai": "^2.4.0",
+
     "@tailwindcss/vite": "^4.1.14",
     "@vitejs/plugin-react": "^5.0.4",
     "firebase-admin": "^13.0.1",
