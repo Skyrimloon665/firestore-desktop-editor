@@ -1,24 +1,15 @@
-import { useState, useEffect, useCallback } from "react";
-
-export type ThemeMode = "light" | "dark" | "system";
+import { useState, useCallback } from "react";
+import type { ThemeMode } from "../services/types";
 
 const STORAGE_KEY = "firestore-editor-theme";
 
-function getSystemTheme(): "light" | "dark" {
-  if (typeof window === "undefined") return "light";
-  return window.matchMedia("(prefers-color-scheme: dark)").matches
-    ? "dark"
-    : "light";
-}
-
 function getStoredTheme(): ThemeMode {
-  if (typeof window === "undefined") return "system";
-  return (localStorage.getItem(STORAGE_KEY) as ThemeMode) || "system";
+  if (typeof window === "undefined") return "light";
+  return (localStorage.getItem(STORAGE_KEY) as ThemeMode) || "light";
 }
 
 function applyTheme(mode: ThemeMode) {
-  const resolved = mode === "system" ? getSystemTheme() : mode;
-  document.documentElement.classList.toggle("dark", resolved === "dark");
+  document.documentElement.classList.toggle("dark", mode === "dark");
 }
 
 export function useTheme() {
@@ -30,15 +21,7 @@ export function useTheme() {
     applyTheme(mode);
   }, []);
 
-  useEffect(() => {
-    applyTheme(theme);
-    if (theme !== "system") return;
-
-    const mq = window.matchMedia("(prefers-color-scheme: dark)");
-    const handler = () => applyTheme("system");
-    mq.addEventListener("change", handler);
-    return () => mq.removeEventListener("change", handler);
-  }, [theme]);
+  applyTheme(theme);
 
   return { theme, setTheme };
 }

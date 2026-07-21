@@ -11,7 +11,7 @@ export interface StatusMessage {
 }
 
 export type ConnectionMode = "none" | "demo" | "cloud";
-export type ThemeMode = "light" | "dark" | "system";
+export type ThemeMode = "light" | "dark";
 
 export interface FieldEditState {
   editingFieldKey: string | null;
