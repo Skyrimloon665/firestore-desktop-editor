@@ -36,7 +36,8 @@ export function DocumentListPanel({
   const handleItemClick = (doc: DocData) => {
     if (doc.data?.__subcollection) {
       const base = collectionPath.replace(/\/+$/, "");
-      const subPath = base + "/" + doc.id.replace(/\/$/, "");
+      const id = doc.id.replace(/\/$/, "");
+      const subPath = base ? base + "/" + id : id;
       onCollectionPathChange(subPath);
       onFetchDocuments(subPath);
     } else {

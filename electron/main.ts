@@ -180,6 +180,24 @@ ipcMain.handle("firebase:connect-with-credentials-json", async (_event, serviceA
   }
 });
 
+// 2.5. LIST ROOT-LEVEL COLLECTIONS
+ipcMain.handle("firebase:list-root-collections", async () => {
+  if (!db) {
+    return { success: false, error: "No hay una base de datos activa. Conecte sus credenciales primero." };
+  }
+  try {
+    const collections = await (db as any).listCollections();
+    const documents = collections.map((col: any) => ({
+      id: col.id + "/",
+      data: { __subcollection: true },
+    }));
+    return { success: true, documents };
+  } catch (err: any) {
+    console.error("Error al listar colecciones raíz:", err);
+    return { success: false, error: err.message || "Error al listar colecciones raíz." };
+  }
+});
+
 // 3. LIST DOCUMENTS / SUBCOLLECTIONS
 function parsePath(path: string): { segments: string[]; isCollection: boolean } {
   const segments = path.split("/").filter(Boolean);

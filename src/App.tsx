@@ -55,7 +55,7 @@ export default function App() {
   const [jsonPasteOpen, setJsonPasteOpen] = useState(false);
   const [rawJsonText, setRawJsonText] = useState("");
 
-  const [collectionPath, setCollectionPath] = useState(MOCK_COLLECTION);
+  const [collectionPath, setCollectionPath] = useState("");
   const [documents, setDocuments] = useState<DocData[]>([]);
   const [selectedDocId, setSelectedDocId] = useState<string | null>(null);
   const [searchFilter, setSearchFilter] = useState("");
@@ -115,8 +115,11 @@ export default function App() {
         setProjectId(res.projectId);
         setCredentialsName(res.fileName || "credentials.json");
         setConnectionMode("cloud");
-        showStatus(`Conectado exitosamente al proyecto ${res.projectId}`, "success");
-        await loadDocumentsIntoState(collectionPath, "cloud", res.projectId);
+        setCollectionPath("");
+        const rootResult = await firestoreOps.loadRootCollections(res.projectId);
+        setDocuments(rootResult.documents);
+        setSelectedDocId(null);
+        showStatus(`Conectado a ${res.projectId} — colecciones cargadas`, "success");
       } else if (res.error) {
         showStatus(res.error, "error");
       }
@@ -144,9 +147,11 @@ export default function App() {
         setCredentialsName(isElectron ? "JSON Pegado" : "Cuenta de Servicio");
         setConnectionMode("cloud");
         setJsonPasteOpen(false);
-        const label = isElectron ? "(Modo Electron)" : "(Vía Servidor)";
-        showStatus(`Conectado a ${res.projectId} ${label}`, "success");
-        await loadDocumentsIntoState(collectionPath, "cloud", res.projectId);
+        setCollectionPath("");
+        const rootResult = await firestoreOps.loadRootCollections(res.projectId);
+        setDocuments(rootResult.documents);
+        setSelectedDocId(null);
+        showStatus(`Conectado a ${res.projectId} — colecciones cargadas`, "success");
       } else {
         showStatus(res.error || "Fallo en conexión", "error");
       }
@@ -161,18 +166,31 @@ export default function App() {
     setProjectId(MOCK_PROJECT_ID);
     setCredentialsName("Simulada (Modo de Prueba)");
     setConnectionMode("demo");
+    setCollectionPath(MOCK_COLLECTION);
     showStatus("Modo Demo local activado. Base de datos precargada.", "success");
-    const mockDocs = simulatedDb[collectionPath] || INITIAL_MOCK_DOCUMENTS;
+    const mockDocs = simulatedDb[MOCK_COLLECTION] || INITIAL_MOCK_DOCUMENTS;
     setDocuments(mockDocs);
     setSelectedDocId(mockDocs.length > 0 ? mockDocs[0].id : null);
   };
 
-  const handleFetchDocuments = (path?: string) => {
+  const handleFetchDocuments = async (path?: string) => {
     if (connectionMode === "none") {
       showStatus("Por favor conéctese a una base de datos o use el Modo Demo primero.", "error");
       return;
     }
     const targetPath = typeof path === "string" ? path : collectionPath;
+    if (!targetPath) {
+      if (connectionMode === "cloud") {
+        try {
+          const rootResult = await firestoreOps.loadRootCollections(projectId);
+          setDocuments(rootResult.documents);
+          setSelectedDocId(null);
+        } catch (err: any) {
+          showStatus(`Error: ${err.message}`, "error");
+        }
+      }
+      return;
+    }
     loadDocumentsIntoState(targetPath, connectionMode, projectId);
   };
 
@@ -236,6 +254,10 @@ export default function App() {
   const handleCreateEmptyDocument = () => {
     if (connectionMode === "none") {
       showStatus("Conecte el entorno primero.", "error");
+      return;
+    }
+    if (!collectionPath) {
+      showStatus("Seleccione una colección primero.", "error");
       return;
     }
     const newId = prompt("Ingrese ID del nuevo documento:");

@@ -97,6 +97,25 @@ function parseFieldValue(fieldValue: any, fieldType: string): any {
   return fieldValue;
 }
 
+app.post("/api/list-root-collections", async (req, res) => {
+  const { projectId } = req.body;
+  try {
+    const instance = getDb(projectId);
+    if (!instance) {
+      return res.status(400).json({ error: "No hay una base de datos activa. Cargue sus credenciales primero." });
+    }
+    const collections = await (instance.db as any).listCollections();
+    const documents = collections.map((col: any) => ({
+      id: col.id + "/",
+      data: { __subcollection: true },
+    }));
+    res.json({ success: true, documents });
+  } catch (err: any) {
+    console.error("Error en list-root-collections:", err);
+    res.status(500).json({ error: err.message || "Error al listar colecciones raíz." });
+  }
+});
+
 app.post("/api/list-documents", async (req, res) => {
   const { collectionPath, projectId } = req.body;
   try {

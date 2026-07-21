@@ -47,6 +47,11 @@ export interface ElectronAPI {
     documents?: DocData[];
     error?: string;
   }>;
+  listRootCollections: () => Promise<{
+    success: boolean;
+    documents?: DocData[];
+    error?: string;
+  }>;
   updateField: (data: {
     collectionPath: string;
     docId: string;

@@ -154,5 +154,21 @@ export function useFirestoreOperations(
     [connectionMode, collectionPath, projectId, simulatedDb, setSimulatedDb]
   );
 
-  return { loadDocuments, updateField, addField, createEmptyDocument };
+  const loadRootCollections = useCallback(
+    async (targetProjId: string): Promise<{
+      documents: DocData[];
+    }> => {
+      if (connectionMode === "demo") {
+        return { documents: [] };
+      }
+      const res = await api.listRootCollections(targetProjId);
+      if (res.success && res.documents) {
+        return { documents: res.documents };
+      }
+      throw new Error(res.error || "Fallo al listar colecciones raíz");
+    },
+    [connectionMode]
+  );
+
+  return { loadDocuments, loadRootCollections, updateField, addField, createEmptyDocument };
 }

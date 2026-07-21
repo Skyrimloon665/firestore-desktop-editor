@@ -51,6 +51,16 @@ export async function listDocuments(
   );
 }
 
+export async function listRootCollections(
+  projectId: string
+): Promise<{ success: boolean; documents?: DocData[]; error?: string }> {
+  return electronOrFetch(
+    () => window.electron!.listRootCollections(),
+    "/api/list-root-collections",
+    { projectId }
+  );
+}
+
 export async function updateField(data: {
   collectionPath: string;
   docId: string;

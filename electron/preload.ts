@@ -13,6 +13,8 @@ contextBridge.exposeInMainWorld("electron", {
   listDocuments: (collectionPath: string) => 
     ipcRenderer.invoke("firebase:list-documents", collectionPath),
 
+  listRootCollections: () =>
+    ipcRenderer.invoke("firebase:list-root-collections"),
   updateField: (data: { 
     collectionPath: string; 
     docId: string; 
