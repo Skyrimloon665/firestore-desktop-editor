@@ -24,7 +24,7 @@ async function main() {
     execSync("lsof -ti:3000 | xargs kill -9 2>/dev/null", { cwd: ROOT });
   } catch {}
 
-  const server = spawn("pnpm", ["dev"], {
+  const server = spawn("npx", ["tsx", "server.ts"], {
     cwd: ROOT,
     stdio: "inherit",
     shell: process.platform === "win32",
