@@ -1,5 +1,5 @@
-import { Plus, RefreshCw, FileText, ArrowRight, Terminal, FolderOpen, ChevronDown, ChevronRight, Search, Database } from "lucide-react";
-import { useState } from "react";
+import { Plus, RefreshCw, FileText, ArrowRight, Terminal, FolderOpen, ChevronDown, ChevronRight, Search, Database, Check } from "lucide-react";
+import { useState, useRef, useEffect } from "react";
 import type { DocData, ConnectionMode } from "../services/types";
 
 interface DocumentListPanelProps {
@@ -40,9 +40,25 @@ export function DocumentListPanel({
   onRefreshRootCollections,
 }: DocumentListPanelProps) {
   const [showPathInput, setShowPathInput] = useState(false);
-  const [showRootCollections, setShowRootCollections] = useState(true);
+  const [dropdownOpen, setDropdownOpen] = useState(false);
+  const [rootSearch, setRootSearch] = useState("");
+  const dropdownRef = useRef<HTMLDivElement>(null);
 
   const currentRoot = activeRootId(collectionPath);
+
+  useEffect(() => {
+    const handleClickOutside = (e: MouseEvent) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(e.target as Node)) {
+        setDropdownOpen(false);
+      }
+    };
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
+
+  const filteredRoots = rootCollections.filter((rc) =>
+    rc.id.replace(/\/$/, "").toLowerCase().includes(rootSearch.toLowerCase())
+  );
 
   const handleItemClick = (doc: DocData) => {
     if (doc.data?.__subcollection) {
@@ -57,6 +73,8 @@ export function DocumentListPanel({
   };
 
   const handleRootClick = (rootId: string) => {
+    setDropdownOpen(false);
+    setRootSearch("");
     onCollectionPathChange(rootId);
     onFetchDocuments(rootId);
   };
@@ -64,48 +82,73 @@ export function DocumentListPanel({
   return (
     <section className="w-72 border-r border-slate-800 bg-slate-900 text-slate-300 flex flex-col shrink-0">
       {connectionMode === "cloud" && rootCollections.length > 0 && (
-        <div className="border-b border-slate-800">
-          <button
-            onClick={() => setShowRootCollections((v) => !v)}
-            className="w-full flex items-center gap-1.5 px-3 py-2 text-[9px] uppercase font-bold tracking-widest text-slate-500 hover:text-slate-300 transition-colors cursor-pointer"
-          >
-            {showRootCollections ? <ChevronDown className="w-3 h-3" /> : <ChevronRight className="w-3 h-3" />}
-            Colecciones
-            <span className="ml-auto text-[9px] font-mono normal-case tracking-normal text-slate-600">
-              {rootCollections.length}
-            </span>
+        <div className="border-b border-slate-800 px-3 py-2" ref={dropdownRef}>
+          <div className="flex items-center gap-1.5 mb-1.5">
+            <span className="text-[9px] uppercase font-bold tracking-widest text-slate-500">Colección</span>
             <button
-              onClick={(e) => { e.stopPropagation(); onRefreshRootCollections(); }}
-              className="p-0.5 rounded text-slate-500 hover:text-indigo-400 transition-colors cursor-pointer"
+              onClick={onRefreshRootCollections}
+              className="ml-auto p-0.5 rounded text-slate-500 hover:text-indigo-400 transition-colors cursor-pointer"
               title="Refrescar colecciones raíz"
             >
               <RefreshCw className="w-2.5 h-2.5" />
             </button>
-          </button>
-          {showRootCollections && (
-            <div className="pb-1 px-1 space-y-0.5">
-              {rootCollections.map((rc) => {
-                const isActiveBase = rc.id.replace(/\/$/, "") === currentRoot;
-                return (
-                  <button
-                    key={rc.id}
-                    onClick={() => handleRootClick(rc.id.replace(/\/$/, ""))}
-                    className={`w-full text-left flex items-center gap-2 px-2 py-1.5 rounded text-[11px] font-mono transition-colors cursor-pointer ${
-                      isActiveBase
-                        ? "bg-indigo-500/15 text-indigo-300 border-l-2 border-indigo-400"
-                        : "text-slate-400 hover:bg-slate-800/60 hover:text-slate-200 border-l-2 border-transparent"
-                    }`}
-                  >
-                    <Database className="w-3 h-3 shrink-0 text-cyan-500/70" />
-                    <span className="truncate">{rc.id.replace(/\/$/, "")}</span>
-                    {isActiveBase && (
-                      <span className="ml-auto text-[8px] text-indigo-400/70 font-bold">BASE</span>
-                    )}
-                  </button>
-                );
-              })}
-            </div>
-          )}
+          </div>
+          <div className="relative">
+            <button
+              onClick={() => setDropdownOpen((v) => !v)}
+              className="w-full flex items-center gap-2 bg-slate-800/80 border border-slate-700/60 hover:border-slate-600 px-2.5 py-1.5 rounded text-[11px] font-mono transition-colors cursor-pointer"
+            >
+              <Database className="w-3 h-3 shrink-0 text-cyan-500/70" />
+              <span className={`flex-1 text-left truncate ${currentRoot ? "text-indigo-200" : "text-slate-500"}`}>
+                {currentRoot || "Seleccionar colección..."}
+              </span>
+              <ChevronDown className={`w-3 h-3 shrink-0 text-slate-500 transition-transform ${dropdownOpen ? "rotate-180" : ""}`} />
+            </button>
+            {dropdownOpen && (
+              <div className="absolute top-full left-0 right-0 mt-1 bg-slate-800 border border-slate-700 rounded-lg shadow-xl z-50 overflow-hidden">
+                <div className="p-1.5 border-b border-slate-700">
+                  <div className="relative">
+                    <Search className="absolute left-2 top-1/2 -translate-y-1/2 w-3 h-3 text-slate-500" />
+                    <input
+                      type="text"
+                      placeholder="Buscar colección..."
+                      className="w-full bg-slate-900 border border-slate-700 rounded pl-6 pr-2 py-1.5 text-[11px] text-white placeholder-slate-500 focus:outline-none focus:ring-1 focus:ring-indigo-500/50"
+                      value={rootSearch}
+                      onChange={(e) => setRootSearch(e.target.value)}
+                      autoFocus
+                      spellCheck={false}
+                    />
+                  </div>
+                </div>
+                <div className="max-h-48 overflow-y-auto py-0.5">
+                  {filteredRoots.length === 0 ? (
+                    <div className="px-3 py-4 text-center text-[10px] text-slate-500">
+                      Sin resultados
+                    </div>
+                  ) : (
+                    filteredRoots.map((rc) => {
+                      const id = rc.id.replace(/\/$/, "");
+                      const isActive = id === currentRoot;
+                      return (
+                        <button
+                          key={rc.id}
+                          onClick={() => handleRootClick(id)}
+                          className={`w-full text-left flex items-center gap-2 px-3 py-1.5 text-[11px] font-mono transition-colors cursor-pointer ${
+                            isActive
+                              ? "bg-indigo-500/15 text-indigo-300"
+                              : "text-slate-400 hover:bg-slate-700/60 hover:text-slate-200"
+                          }`}
+                        >
+                          {isActive ? <Check className="w-3 h-3 shrink-0 text-indigo-400" /> : <span className="w-3 h-3 shrink-0" />}
+                          <span className="truncate">{id}</span>
+                        </button>
+                      );
+                    })
+                  )}
+                </div>
+              </div>
+            )}
+          </div>
         </div>
       )}
 
