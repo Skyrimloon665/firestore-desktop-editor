@@ -42,6 +42,7 @@ export function DocumentListPanel({
   const [showPathInput, setShowPathInput] = useState(false);
   const [dropdownOpen, setDropdownOpen] = useState(false);
   const [rootSearch, setRootSearch] = useState("");
+  const [pathInputValue, setPathInputValue] = useState("");
   const dropdownRef = useRef<HTMLDivElement>(null);
 
   const currentRoot = activeRootId(collectionPath);
@@ -65,6 +66,7 @@ export function DocumentListPanel({
       const base = collectionPath.replace(/\/+$/, "");
       const id = doc.id.replace(/\/$/, "");
       const subPath = base ? base + "/" + id : id;
+      setPathInputValue(currentRoot ? subPath.slice(currentRoot.length).replace(/^\//, "") : subPath);
       onCollectionPathChange(subPath);
       onFetchDocuments(subPath);
     } else {
@@ -75,8 +77,16 @@ export function DocumentListPanel({
   const handleRootClick = (rootId: string) => {
     setDropdownOpen(false);
     setRootSearch("");
+    setPathInputValue("");
     onCollectionPathChange(rootId);
     onFetchDocuments(rootId);
+  };
+
+  const handleSubmitPath = () => {
+    const trimmed = pathInputValue.replace(/^\/+|\/+$/g, "");
+    const fullPath = currentRoot ? (trimmed ? `${currentRoot}/${trimmed}` : currentRoot) : trimmed;
+    onCollectionPathChange(fullPath);
+    onFetchDocuments(fullPath);
   };
 
   return (
@@ -171,15 +181,15 @@ export function DocumentListPanel({
             <div className="flex gap-1.5">
               <input
                 type="text"
-                placeholder="Ej: nombre-coleccion"
+                placeholder={currentRoot ? "ej: doc-id/subcol" : "ej: nombre-coleccion"}
                 className="w-full bg-slate-800/80 border border-slate-700/60 text-white px-2.5 py-1.5 rounded text-[11px] focus:outline-none focus:ring-1 focus:ring-indigo-500/50 font-mono text-indigo-200 overflow-x-auto whitespace-nowrap"
-                value={collectionPath}
-                onChange={(e) => onCollectionPathChange(e.target.value)}
-                onKeyDown={(e) => { if (e.key === "Enter") onFetchDocuments(); }}
+                value={pathInputValue}
+                onChange={(e) => setPathInputValue(e.target.value)}
+                onKeyDown={(e) => { if (e.key === "Enter") handleSubmitPath(); }}
                 spellCheck={false}
               />
               <button
-                onClick={() => onFetchDocuments()}
+                onClick={handleSubmitPath}
                 disabled={isLoading}
                 className="bg-slate-700/80 hover:bg-slate-600 disabled:bg-slate-800 disabled:text-slate-600 p-1.5 rounded transition-all cursor-pointer text-white"
                 title="Listar Documentos"
@@ -258,16 +268,16 @@ export function DocumentListPanel({
                     : "text-slate-400 hover:bg-slate-800/60 hover:text-slate-200 border-l-2 border-transparent hover:border-l-2 hover:border-slate-600"
                 }`}
               >
-                <div className="px-3 py-1.5">
+                <div className="px-3 py-2">
                   <div className="flex items-center justify-between w-full">
-                    <span className="font-mono truncate flex-1 pr-2 text-[11px]">
+                    <span className="font-mono truncate flex-1 pr-2 text-[12px] font-medium">
                       {doc.id}
                     </span>
                     {isSubcollection ? (
-                      <FolderOpen className="w-3 h-3 shrink-0 text-cyan-500" />
+                      <FolderOpen className="w-4 h-4 shrink-0 text-cyan-500" />
                     ) : (
                       <ArrowRight
-                        className={`w-3 h-3 shrink-0 ${
+                        className={`w-4 h-4 shrink-0 ${
                           isActive ? "text-indigo-400" : "text-slate-600"
                         }`}
                       />

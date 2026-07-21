@@ -92,6 +92,8 @@ export function FieldInspector({
     : [];
 
   if (!activeDocument) {
+    const isCloudConnected = connectionMode === "cloud";
+    const hasPath = !!collectionPath;
     return (
       <section className="flex-1 bg-slate-50 dark:bg-slate-800/50 flex flex-col overflow-hidden">
         <div className="flex-1 flex flex-col items-center justify-center p-6 text-center text-slate-500 space-y-4">
@@ -99,14 +101,27 @@ export function FieldInspector({
             <Database className="w-10 h-10 text-indigo-500" />
           </div>
           <div className="max-w-md">
-            <h3 className="text-md font-bold text-slate-800 dark:text-slate-200 mb-1">
-              Ningún Documento Cargado
-            </h3>
-            <p className="text-xs text-slate-500 dark:text-slate-400 leading-relaxed font-medium">
-               Ingrese una colección en el panel izquierdo y presione{" "}
-              <strong className="text-indigo-600">Consultar</strong>. O inicie el{" "}
-              <strong className="text-amber-600">Modo Demo</strong>.
-            </p>
+            {isCloudConnected && !hasPath ? (
+              <>
+                <h3 className="text-md font-bold text-slate-800 dark:text-slate-200 mb-1">
+                  Seleccione una Colección
+                </h3>
+                <p className="text-xs text-slate-500 dark:text-slate-400 leading-relaxed font-medium">
+                  Use el desplegable en el panel izquierdo para elegir una colección raíz.
+                </p>
+              </>
+            ) : (
+              <>
+                <h3 className="text-md font-bold text-slate-800 dark:text-slate-200 mb-1">
+                  Ningún Documento Cargado
+                </h3>
+                <p className="text-xs text-slate-500 dark:text-slate-400 leading-relaxed font-medium">
+                   Ingrese una colección en el panel izquierdo y presione{" "}
+                  <strong className="text-indigo-600">Consultar</strong>. O inicie el{" "}
+                  <strong className="text-amber-600">Modo Demo</strong>.
+                </p>
+              </>
+            )}
           </div>
         </div>
       </section>
