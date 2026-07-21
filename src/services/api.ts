@@ -51,6 +51,24 @@ export async function listDocuments(
   );
 }
 
+export async function getStoredCredentials(): Promise<{
+  hasStored: boolean;
+  projectId?: string;
+  fileName?: string;
+}> {
+  if (isElectron && window.electron) {
+    return window.electron.getStoredCredentials();
+  }
+  return { hasStored: false };
+}
+
+export async function clearStoredCredentials(): Promise<{ success: boolean }> {
+  if (isElectron && window.electron) {
+    return window.electron.clearStoredCredentials();
+  }
+  return { success: false };
+}
+
 export async function listRootCollections(
   projectId: string
 ): Promise<{ success: boolean; documents?: DocData[]; error?: string }> {

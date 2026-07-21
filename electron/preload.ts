@@ -15,6 +15,10 @@ contextBridge.exposeInMainWorld("electron", {
 
   listRootCollections: () =>
     ipcRenderer.invoke("firebase:list-root-collections"),
+  getStoredCredentials: () =>
+    ipcRenderer.invoke("firebase:get-stored-credentials"),
+  clearStoredCredentials: () =>
+    ipcRenderer.invoke("firebase:clear-stored-credentials"),
   updateField: (data: { 
     collectionPath: string; 
     docId: string; 

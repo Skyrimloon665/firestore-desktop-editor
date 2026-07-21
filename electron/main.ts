@@ -21,6 +21,20 @@ async function cleanupFirebase() {
   }
 }
 
+const configPath = path.join(app.getPath("userData"), "app-config.json");
+
+function readConfig(): Record<string, any> {
+  try {
+    return JSON.parse(fs.readFileSync(configPath, "utf-8"));
+  } catch { return {}; }
+}
+
+function writeConfig(data: Record<string, any>) {
+  const dir = path.dirname(configPath);
+  if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
+  fs.writeFileSync(configPath, JSON.stringify(data, null, 2));
+}
+
 function createWindow() {
   mainWindow = new BrowserWindow({
     width: 1200,
@@ -154,6 +168,13 @@ ipcMain.handle("firebase:select-credentials-file", async () => {
 
     await initFirebaseFromAccount(serviceAccount);
 
+    writeConfig({
+      type: "file",
+      path: filePath,
+      projectId: serviceAccount.project_id,
+      fileName: path.basename(filePath),
+    });
+
     return {
       success: true,
       projectId: serviceAccount.project_id,
@@ -173,6 +194,18 @@ ipcMain.handle("firebase:connect-with-credentials-json", async (_event, serviceA
 
     await initFirebaseFromAccount(serviceAccount);
 
+    const jsonPath = path.join(app.getPath("userData"), "credentials.json");
+    const dir = path.dirname(jsonPath);
+    if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
+    fs.writeFileSync(jsonPath, JSON.stringify(serviceAccount, null, 2));
+
+    writeConfig({
+      type: "json",
+      path: jsonPath,
+      projectId: serviceAccount.project_id,
+      fileName: "credentials.json",
+    });
+
     return { success: true, projectId: serviceAccount.project_id };
   } catch (err: any) {
     console.error("Error en conexión por JSON crudo:", err);
@@ -180,7 +213,37 @@ ipcMain.handle("firebase:connect-with-credentials-json", async (_event, serviceA
   }
 });
 
-// 2.5. LIST ROOT-LEVEL COLLECTIONS
+// 2.5. STORED CREDENTIALS
+ipcMain.handle("firebase:get-stored-credentials", async () => {
+  const cfg = readConfig();
+  if (!cfg.path) return { hasStored: false };
+
+  try {
+    if (!fs.existsSync(cfg.path)) {
+      writeConfig({});
+      return { hasStored: false };
+    }
+    const fileContent = fs.readFileSync(cfg.path, "utf-8");
+    const serviceAccount = JSON.parse(fileContent);
+    await initFirebaseFromAccount(serviceAccount);
+    return {
+      hasStored: true,
+      projectId: cfg.projectId,
+      fileName: cfg.fileName,
+      type: cfg.type,
+    };
+  } catch {
+    writeConfig({});
+    return { hasStored: false };
+  }
+});
+
+ipcMain.handle("firebase:clear-stored-credentials", async () => {
+  writeConfig({});
+  return { success: true };
+});
+
+// 2.6. LIST ROOT-LEVEL COLLECTIONS
 ipcMain.handle("firebase:list-root-collections", async () => {
   if (!db) {
     return { success: false, error: "No hay una base de datos activa. Conecte sus credenciales primero." };

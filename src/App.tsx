@@ -1,4 +1,4 @@
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
 import { ConnectionHeader } from "./components/ConnectionHeader";
 import { JsonPasteDialog } from "./components/JsonPasteDialog";
 import { DocumentListPanel } from "./components/DocumentListPanel";
@@ -7,7 +7,7 @@ import { StatusBar } from "./components/StatusBar";
 import { useStatusMessage } from "./hooks/useStatusMessage";
 import { useFirestoreOperations } from "./hooks/useFirestore";
 import { useTheme } from "./hooks/useTheme";
-import { selectCredentialsFile, connectWithCredentialsJson } from "./services/api";
+import { selectCredentialsFile, connectWithCredentialsJson, getStoredCredentials, clearStoredCredentials } from "./services/api";
 import type { ConnectionMode, DocData, SimulatedDb } from "./services/types";
 
 const MOCK_PROJECT_ID = "demo-project";
@@ -75,6 +75,20 @@ export default function App() {
   const [simulatedDb, setSimulatedDb] = useState<SimulatedDb>({
     [MOCK_COLLECTION]: INITIAL_MOCK_DOCUMENTS,
   });
+
+  useEffect(() => {
+    if (!isElectron) return;
+    getStoredCredentials().then(async (stored) => {
+      if (stored.hasStored && stored.projectId) {
+        setProjectId(stored.projectId);
+        setCredentialsName(stored.fileName || "credentials.json");
+        setConnectionMode("cloud");
+        const rootResult = await firestoreOps.loadRootCollections(stored.projectId);
+        setRootCollections(rootResult.documents || []);
+        showStatus(`Reconectado a ${stored.projectId}`, "success");
+      }
+    });
+  }, []);
 
   const firestoreOps = useFirestoreOperations(
     connectionMode,
@@ -277,12 +291,13 @@ export default function App() {
     doCreate();
   };
 
-  const handleDisconnect = () => {
+  const handleDisconnect = async () => {
     setConnectionMode("none");
     setProjectId("");
     setRootCollections([]);
     setDocuments([]);
     setSelectedDocId(null);
+    if (isElectron) await clearStoredCredentials();
     showStatus("Desconectado de la base de datos", "info");
   };
 

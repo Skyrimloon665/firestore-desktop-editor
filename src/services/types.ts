@@ -52,6 +52,12 @@ export interface ElectronAPI {
     documents?: DocData[];
     error?: string;
   }>;
+  getStoredCredentials: () => Promise<{
+    hasStored: boolean;
+    projectId?: string;
+    fileName?: string;
+  }>;
+  clearStoredCredentials: () => Promise<{ success: boolean }>;
   updateField: (data: {
     collectionPath: string;
     docId: string;
