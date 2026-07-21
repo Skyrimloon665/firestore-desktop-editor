@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { FileText, RefreshCw, Info, Database, Plus, Save, Check, X, Pencil, ArrowUpDown, ArrowUp, ArrowDown } from "lucide-react";
+import { FileText, RefreshCw, Info, Database, Plus, Save, Check, X, ArrowUpDown, ArrowUp, ArrowDown, ChevronDown, ChevronRight } from "lucide-react";
 import type { DocData, ConnectionMode } from "../services/types";
 
 interface FieldInspectorProps {
@@ -30,6 +30,14 @@ interface FieldInspectorProps {
   onAddNewField: () => void;
 }
 
+const typeBadge: Record<string, string> = {
+  number: "bg-amber-500/10 text-amber-600 dark:text-amber-400 border-amber-200/50 dark:border-amber-700/30",
+  boolean: "bg-violet-500/10 text-violet-600 dark:text-violet-400 border-violet-200/50 dark:border-violet-700/30",
+  object: "bg-sky-500/10 text-sky-600 dark:text-sky-400 border-sky-200/50 dark:border-sky-700/30",
+  string: "bg-slate-100 dark:bg-slate-700/50 text-slate-600 dark:text-slate-400 border-slate-200 dark:border-slate-600/50",
+  null: "bg-slate-100 dark:bg-slate-700/50 text-slate-500 dark:text-slate-500 border-slate-200 dark:border-slate-600/50",
+};
+
 export function FieldInspector({
   activeDocument,
   documents,
@@ -58,6 +66,7 @@ export function FieldInspector({
 }: FieldInspectorProps) {
   const [sortKey, setSortKey] = useState<"key" | "value" | null>(null);
   const [sortDir, setSortDir] = useState<"asc" | "desc">("asc");
+  const [showInstructions, setShowInstructions] = useState(false);
 
   const toggleSort = (col: "key" | "value") => {
     if (sortKey !== col) {
@@ -84,20 +93,19 @@ export function FieldInspector({
 
   if (!activeDocument) {
     return (
-      <section className="flex-1 bg-slate-50 dark:bg-slate-800 flex flex-col overflow-hidden">
+      <section className="flex-1 bg-slate-50 dark:bg-slate-800/50 flex flex-col overflow-hidden">
         <div className="flex-1 flex flex-col items-center justify-center p-6 text-center text-slate-500 space-y-4">
-          <div className="bg-white dark:bg-slate-700 p-5 rounded-full border border-slate-200 dark:border-slate-600 shadow-sm">
-            <Database className="w-10 h-10 text-indigo-600" />
+          <div className="bg-white dark:bg-slate-800 p-5 rounded-full border border-slate-200 dark:border-slate-700 shadow-xs">
+            <Database className="w-10 h-10 text-indigo-500" />
           </div>
           <div className="max-w-md">
-            <h3 className="text-md font-bold text-slate-800 dark:text-white mb-1">
+            <h3 className="text-md font-bold text-slate-800 dark:text-slate-200 mb-1">
               Ningún Documento Cargado
             </h3>
             <p className="text-xs text-slate-500 dark:text-slate-400 leading-relaxed font-medium">
                Ingrese una colección en el panel izquierdo y presione{" "}
               <strong className="text-indigo-600">Consultar</strong>. O inicie el{" "}
-              <strong className="text-amber-600">Modo Demo</strong> para
-              interactuar de inmediato con datos de prueba.
+              <strong className="text-amber-600">Modo Demo</strong>.
             </p>
           </div>
         </div>
@@ -106,95 +114,83 @@ export function FieldInspector({
   }
 
   return (
-    <section className="flex-1 bg-slate-50 dark:bg-slate-800 flex flex-col overflow-hidden">
+    <section className="flex-1 bg-slate-50 dark:bg-slate-800/50 flex flex-col overflow-hidden">
       <div className="flex-1 flex flex-col overflow-hidden">
-        <div className="bg-white dark:bg-slate-800 border-b border-slate-200 dark:border-slate-700 px-6 py-4 flex items-center justify-between shrink-0">
-          <div>
-            <h2 className="text-xs font-semibold text-slate-400 dark:text-slate-500 uppercase tracking-wider mb-0.5">
-              Current Document
-            </h2>
-            <div className="flex items-center gap-2 mt-0.5">
-              <FileText className="w-4 h-4 text-indigo-600" />
-              <code className="text-sm font-mono text-indigo-600 dark:text-indigo-400 font-bold">
+        <div className="bg-white dark:bg-slate-800/80 border-b border-slate-200 dark:border-slate-700/50 px-5 py-3 flex items-center justify-between shrink-0">
+          <div className="flex items-center gap-3 min-w-0">
+            <div className="flex items-center gap-2 min-w-0">
+              <FileText className="w-4 h-4 text-indigo-500 shrink-0" />
+              <code className="text-sm font-mono text-indigo-600 dark:text-indigo-400 font-bold truncate">
                 {activeDocument.id}
               </code>
             </div>
+            <span className="hidden md:inline-flex items-center gap-1 text-[10px] text-slate-400 dark:text-slate-500 font-mono bg-slate-100 dark:bg-slate-700/50 px-2 py-0.5 rounded border border-slate-200 dark:border-slate-700/50 overflow-x-auto whitespace-nowrap max-w-[320px]">
+              <span className="shrink-0 text-slate-400">Ruta:</span>
+              {collectionPath}
+            </span>
           </div>
 
-          <div className="flex items-center gap-3">
-            <span className="text-xs text-slate-600 dark:text-slate-400 hidden md:inline-flex items-center gap-1 font-medium max-w-[300px]">
-              <span className="shrink-0">Ruta:</span>
-              <span className="font-mono bg-slate-100 dark:bg-slate-700 py-0.5 px-2 text-xs text-slate-600 dark:text-slate-300 rounded border border-slate-200 dark:border-slate-600 overflow-x-auto whitespace-nowrap max-w-[220px]">
-                {collectionPath}
-              </span>
-            </span>
+          <div className="flex items-center gap-2 shrink-0">
             <button
               onClick={onRefresh}
-              className="px-4 py-2 bg-indigo-600 text-white rounded-lg font-semibold text-xs shadow-sm hover:bg-indigo-700 active:scale-95 transition-all text-center flex items-center gap-1.5 cursor-pointer"
+              className="px-3 py-1.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-md font-medium text-[11px] shadow-xs transition-all flex items-center gap-1.5 cursor-pointer active:scale-95"
               title="Recargar documento"
             >
-              <RefreshCw className="w-3.5 h-3.5" />
+              <RefreshCw className="w-3 h-3" />
               Refresh
             </button>
           </div>
         </div>
 
-        <div className="flex-1 p-6 overflow-hidden flex flex-col gap-6">
-          <div className="p-4 bg-white dark:bg-slate-700 border border-slate-200 dark:border-slate-600 rounded-xl flex items-start gap-3 shadow-xs shrink-0">
-            <div className="w-8 h-8 rounded-lg bg-indigo-50 dark:bg-indigo-900/40 flex items-center justify-center text-indigo-600 dark:text-indigo-400 shrink-0 mt-0.5">
-              <Info className="w-5 h-5" />
-            </div>
-            <div>
-              <h3 className="text-xs font-bold text-slate-800 dark:text-white mb-0.5">
-                Instrucciones de edición
-              </h3>
-              <p className="text-[11px] text-slate-500 dark:text-slate-400 leading-relaxed font-medium">
-                Para editar un campo, haga{" "}
-                <strong className="text-slate-900 dark:text-white font-semibold">
-                  Doble Clic
-                </strong>{" "}
-                sobre el valor. Modifique su contenido y use el botón azul de{" "}
-                <strong className="text-indigo-600 dark:text-indigo-400 font-bold inline-flex items-center gap-0.5">
-                  Commit
-                </strong>{" "}
-                o presione{" "}
-                <kbd className="bg-slate-100 dark:bg-slate-600 border border-slate-200 dark:border-slate-500 px-1 py-0.5 text-[9px] rounded text-slate-700 dark:text-slate-200 font-mono">
-                  Enter
-                </kbd>{" "}
-                para actualizar Firestore. Las claves pueden ser numéricas.
+        <div className="flex-1 px-5 py-4 overflow-hidden flex flex-col gap-4">
+          <button
+            onClick={() => setShowInstructions((v) => !v)}
+            className="flex items-center gap-1.5 text-[10px] text-slate-400 dark:text-slate-500 hover:text-slate-600 dark:hover:text-slate-300 transition-colors cursor-pointer shrink-0"
+          >
+            {showInstructions ? <ChevronDown className="w-3 h-3" /> : <ChevronRight className="w-3 h-3" />}
+            Instrucciones de edición
+          </button>
+
+          {showInstructions && (
+            <div className="px-3 py-2 bg-white dark:bg-slate-700/50 border border-slate-200 dark:border-slate-700/50 rounded-lg flex items-start gap-2.5 shadow-xs shrink-0">
+              <div className="w-6 h-6 rounded-md bg-indigo-50 dark:bg-indigo-900/30 flex items-center justify-center text-indigo-500 dark:text-indigo-400 shrink-0">
+                <Info className="w-3.5 h-3.5" />
+              </div>
+              <p className="text-[10px] text-slate-500 dark:text-slate-400 leading-relaxed font-medium">
+                Doble clic sobre un valor para editarlo. Use <kbd className="bg-slate-100 dark:bg-slate-600 border border-slate-200 dark:border-slate-500 px-1 py-0.5 text-[8px] rounded text-slate-700 dark:text-slate-200 font-mono">Enter</kbd> para confirmar o <kbd className="bg-slate-100 dark:bg-slate-600 border border-slate-200 dark:border-slate-500 px-1 py-0.5 text-[8px] rounded text-slate-700 dark:text-slate-200 font-mono">Esc</kbd> para cancelar.
               </p>
             </div>
-          </div>
+          )}
 
-          <div className="bg-white dark:bg-slate-700 border border-slate-200 dark:border-slate-600 rounded-lg shadow-sm flex flex-col h-full overflow-hidden">
-            <div className="grid grid-cols-12 bg-slate-50 dark:bg-slate-800 border-b border-slate-200 dark:border-slate-600 px-0 py-0 text-[10px] uppercase font-bold text-slate-500 dark:text-slate-400 tracking-wider shrink-0">
+          <div className="bg-white dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700/50 rounded-lg shadow-xs flex flex-col overflow-hidden">
+            <div className="grid grid-cols-12 bg-slate-50 dark:bg-slate-800/60 border-b border-slate-200 dark:border-slate-700/50 text-[9px] uppercase font-bold text-slate-400 dark:text-slate-500 tracking-wider shrink-0">
               <button
                 onClick={() => toggleSort("key")}
-                className="col-span-4 flex items-center gap-1 px-4 py-2.5 hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors cursor-pointer text-left"
+                className="col-span-4 flex items-center gap-1 px-4 py-2 hover:bg-slate-100 dark:hover:bg-slate-700/30 transition-colors cursor-pointer text-left"
               >
                 Field Key
                 {sortKey === "key" ? (
-                  sortDir === "asc" ? <ArrowUp className="w-3 h-3" /> : <ArrowDown className="w-3 h-3" />
+                  sortDir === "asc" ? <ArrowUp className="w-2.5 h-2.5" /> : <ArrowDown className="w-2.5 h-2.5" />
                 ) : (
-                  <ArrowUpDown className="w-3 h-3 opacity-40" />
+                  <ArrowUpDown className="w-2.5 h-2.5 opacity-30" />
                 )}
               </button>
               <button
                 onClick={() => toggleSort("value")}
-                className="col-span-6 flex items-center gap-1 px-4 py-2.5 hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors cursor-pointer text-left"
+                className="col-span-6 flex items-center gap-1 px-4 py-2 hover:bg-slate-100 dark:hover:bg-slate-700/30 transition-colors cursor-pointer text-left"
               >
-                Value (Double click to edit)
+                Value
                 {sortKey === "value" ? (
-                  sortDir === "asc" ? <ArrowUp className="w-3 h-3" /> : <ArrowDown className="w-3 h-3" />
+                  sortDir === "asc" ? <ArrowUp className="w-2.5 h-2.5" /> : <ArrowDown className="w-2.5 h-2.5" />
                 ) : (
-                  <ArrowUpDown className="w-3 h-3 opacity-40" />
+                  <ArrowUpDown className="w-2.5 h-2.5 opacity-30" />
                 )}
               </button>
-              <div className="col-span-2 text-right px-4 py-2.5">Type</div>
+              <div className="col-span-2 text-right px-4 py-2">Type</div>
             </div>
 
-            <div className="flex-1 overflow-y-auto divide-y divide-slate-100 dark:divide-slate-600">
-              {sortedKeys.map((key) => {
+            <div className="flex-1 overflow-y-auto">
+              {sortedKeys.map((key, idx) => {
                 const originalValue = activeDocument.data[key];
                 const isNumericKey = !isNaN(Number(key));
                 const isUnderEditing = editingFieldKey === key;
@@ -204,29 +200,31 @@ export function FieldInspector({
                 return (
                   <div
                     key={key}
-                    className={`grid grid-cols-12 px-4 py-3 items-center hover:bg-slate-50 dark:hover:bg-slate-600/50 transition-colors group ${
+                    className={`grid grid-cols-12 items-center transition-colors ${
+                      idx % 2 === 0
+                        ? "bg-white dark:bg-slate-800/40"
+                        : "bg-slate-50/50 dark:bg-slate-800/20"
+                    } ${
                       isUnderEditing
-                        ? "bg-indigo-50/20 dark:bg-indigo-900/20"
-                        : isNumericKey
-                          ? "bg-amber-50/15 dark:bg-amber-900/15"
-                          : ""
+                        ? "bg-indigo-50/60 dark:bg-indigo-900/15"
+                        : "hover:bg-slate-50 dark:hover:bg-slate-700/20"
                     }`}
                   >
-                    <div className="col-span-4 font-mono text-xs font-bold text-slate-700 dark:text-slate-300 flex items-center gap-1.5">
+                    <div className="col-span-4 font-mono text-[11px] font-medium text-slate-700 dark:text-slate-300 flex items-center gap-1.5 px-4 py-1.5 border-b border-slate-100 dark:border-slate-700/30">
                       {isNumericKey ? `"${key}"` : key}
                       {isNumericKey && (
-                        <span className="text-[9px] font-bold text-amber-700 dark:text-amber-400 bg-amber-50 dark:bg-amber-900/30 border border-amber-200/60 dark:border-amber-700 px-1.5 py-0.2 rounded">
-                          Numeric
+                        <span className="text-[8px] font-medium text-amber-500/70 bg-amber-500/10 px-1 rounded border border-amber-500/20">
+                          #key
                         </span>
                       )}
                     </div>
 
-                    <div className="col-span-6">
+                    <div className="col-span-6 px-4 py-1.5 border-b border-slate-100 dark:border-slate-700/30">
                       {isUnderEditing ? (
-                        <div className="flex items-center gap-1.5">
+                        <div className="flex items-center gap-1">
                           {editingType === "boolean" ? (
                             <select
-                              className="bg-white dark:bg-slate-600 border border-indigo-400 rounded-md px-2 py-1 text-xs text-slate-800 dark:text-white focus:outline-none focus:ring-2 focus:ring-indigo-100 font-medium"
+                              className="border border-indigo-300 dark:border-indigo-600 rounded px-2 py-1 text-[11px] text-slate-800 dark:text-white bg-white dark:bg-slate-700 focus:outline-none focus:ring-1 focus:ring-indigo-400 font-medium"
                               value={editingValue}
                               onChange={(e) => onEditingValueChange(e.target.value)}
                               autoFocus
@@ -243,7 +241,7 @@ export function FieldInspector({
                                 if (e.key === "Enter") onCommitEdit(key);
                                 if (e.key === "Escape") onCancelEdit();
                               }}
-                              className="flex-1 bg-white dark:bg-slate-600 border border-indigo-400 rounded-md px-2.5 py-1 text-xs text-slate-800 dark:text-white focus:outline-none focus:ring-2 focus:ring-indigo-100 font-mono"
+                              className="flex-1 border border-indigo-300 dark:border-indigo-600 rounded px-2 py-1 text-[11px] text-slate-800 dark:text-white bg-white dark:bg-slate-700 focus:outline-none focus:ring-1 focus:ring-indigo-400 font-mono"
                               autoFocus
                             />
                           )}
@@ -253,7 +251,7 @@ export function FieldInspector({
                             onChange={(e) =>
                               onEditingTypeChange(e.target.value as any)
                             }
-                            className="bg-slate-100 dark:bg-slate-600 border border-slate-200 dark:border-slate-500 rounded-md px-1.5 py-1 text-[10px] text-slate-600 dark:text-slate-300 focus:outline-none"
+                            className="border border-slate-200 dark:border-slate-600 rounded px-1 py-1 text-[9px] text-slate-500 dark:text-slate-400 bg-slate-50 dark:bg-slate-700 focus:outline-none"
                           >
                             <option value="string">string</option>
                             <option value="number">number</option>
@@ -265,17 +263,17 @@ export function FieldInspector({
                             className="p-1 rounded bg-indigo-600 hover:bg-indigo-700 text-white cursor-pointer relative"
                             title="Guardar cambios"
                           >
-                            <Check className="w-3.5 h-3.5" />
+                            <Check className="w-3 h-3" />
                             {hasPendingChanges && (
-                              <span className="absolute -top-1 -right-1 w-2 h-2 bg-amber-400 rounded-full animate-pulse" />
+                              <span className="absolute -top-0.5 -right-0.5 w-1.5 h-1.5 bg-amber-400 rounded-full animate-pulse" />
                             )}
                           </button>
                           <button
                             onClick={onCancelEdit}
-                            className="p-1 rounded bg-slate-100 dark:bg-slate-600 border border-slate-200 dark:border-slate-500 text-slate-500 dark:text-slate-300 hover:text-slate-700 cursor-pointer"
+                            className="p-1 rounded bg-slate-100 dark:bg-slate-700 border border-slate-200 dark:border-slate-600 text-slate-400 dark:text-slate-500 hover:text-slate-600 cursor-pointer"
                             title="Cancelar"
                           >
-                            <X className="w-3.5 h-3.5" />
+                            <X className="w-3 h-3" />
                           </button>
                         </div>
                       ) : (
@@ -283,31 +281,25 @@ export function FieldInspector({
                           onDoubleClick={() =>
                             onStartEdit(key, originalValue)
                           }
-                          className="py-1 cursor-default select-all flex items-center justify-between"
+                          className="py-0.5 cursor-default select-all flex items-center justify-between group"
                           title="Doble clic para editar campo"
                         >
-                          <span className="font-mono text-slate-600 dark:text-slate-300 text-xs overflow-x-auto whitespace-pre-wrap flex-1 leading-relaxed">
+                          <span className="font-mono text-slate-600 dark:text-slate-400 text-[11px] overflow-x-auto whitespace-pre-wrap flex-1 leading-relaxed">
                             {originalValue === null
                               ? "null"
                               : String(originalValue)}
                           </span>
-                          <span className="opacity-0 group-hover:opacity-100 text-[10px] text-indigo-600 dark:text-indigo-400 font-semibold cursor-pointer pl-2 select-none hover:underline">
-                            Doble clic para editar
+                          <span className="opacity-0 group-hover:opacity-100 text-[8px] text-indigo-500 dark:text-indigo-400 font-medium pl-2 select-none shrink-0">
+                            Editar
                           </span>
                         </div>
                       )}
                     </div>
 
-                    <div className="col-span-2 text-right">
+                    <div className="col-span-2 text-right px-4 py-1.5 border-b border-slate-100 dark:border-slate-700/30">
                       <span
-                        className={`text-[10px] font-bold uppercase px-2 py-0.5 rounded border ${
-                          valueType === "number"
-                            ? "bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-400 border-amber-200 dark:border-amber-700"
-                            : valueType === "boolean"
-                              ? "bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-400 border-purple-200 dark:border-purple-700"
-                              : valueType === "object"
-                                ? "bg-indigo-100 dark:bg-indigo-900/30 text-indigo-700 dark:text-indigo-400 border-indigo-200 dark:border-indigo-700"
-                                : "bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-400 border-blue-200 dark:border-blue-700"
+                        className={`text-[9px] font-medium uppercase px-1.5 py-0.5 rounded border ${
+                          typeBadge[valueType] || typeBadge.string
                         }`}
                       >
                         {valueType}
@@ -318,42 +310,42 @@ export function FieldInspector({
               })}
             </div>
 
-            <div className="border-t border-slate-200 dark:border-slate-600 p-4 bg-slate-50 dark:bg-slate-800 flex items-center justify-between rounded-b-lg shrink-0">
+            <div className="border-t border-slate-200 dark:border-slate-700/50 px-4 py-2.5 bg-slate-50 dark:bg-slate-800/40 flex items-center justify-between rounded-b-lg shrink-0">
               {isAddingField ? (
-                <div className="w-full bg-white dark:bg-slate-700 border border-slate-200 dark:border-slate-600 rounded-lg p-3.5 space-y-3.5 shadow-xs">
+                <div className="w-full bg-white dark:bg-slate-700/80 border border-slate-200 dark:border-slate-600/50 rounded-lg p-3 space-y-3 shadow-xs">
                   <div className="flex items-center justify-between">
-                    <span className="text-xs font-bold text-slate-800 dark:text-white flex items-center gap-1.5">
-                      <Plus className="w-4 h-4 text-indigo-600" />
-                      Inyectar Nuevo Campo
+                    <span className="text-[11px] font-bold text-slate-800 dark:text-white flex items-center gap-1.5">
+                      <Plus className="w-3.5 h-3.5 text-indigo-500" />
+                      Nuevo Campo
                     </span>
                     <button
                       onClick={onToggleAddField}
-                      className="text-slate-400 dark:text-slate-300 hover:text-slate-600 text-xs cursor-pointer flex items-center gap-0.5 font-medium"
+                      className="text-slate-400 dark:text-slate-500 hover:text-slate-600 text-[10px] cursor-pointer flex items-center gap-0.5 font-medium"
                     >
-                      <X className="w-3.5 h-3.5" /> Cancelar
+                      <X className="w-3 h-3" /> Cancelar
                     </button>
                   </div>
 
-                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
                     <div>
-                      <label className="block text-[10px] text-slate-500 dark:text-slate-400 font-bold uppercase mb-1">
-                        Nombre / Clave
+                      <label className="block text-[9px] text-slate-500 dark:text-slate-400 font-bold uppercase mb-1">
+                        Clave
                       </label>
                       <input
                         type="text"
-                        placeholder="Ej: 1 o id_sensor"
-                        className="w-full bg-slate-50 dark:bg-slate-600 border border-slate-200 dark:border-slate-500 rounded p-2 text-xs text-slate-800 dark:text-white placeholder-slate-400 dark:placeholder-slate-500 focus:outline-none focus:border-indigo-500 font-mono"
+                        placeholder="Ej: id_sensor"
+                        className="w-full bg-slate-50 dark:bg-slate-600/50 border border-slate-200 dark:border-slate-500/50 rounded px-2 py-1.5 text-[11px] text-slate-800 dark:text-white placeholder-slate-400 dark:placeholder-slate-500 focus:outline-none focus:border-indigo-500 font-mono"
                         value={newFieldKey}
                         onChange={(e) => onNewFieldKeyChange(e.target.value)}
                       />
                     </div>
 
                     <div>
-                      <label className="block text-[10px] text-slate-500 dark:text-slate-400 font-bold uppercase mb-1">
-                        Tipo de Dato
+                      <label className="block text-[9px] text-slate-500 dark:text-slate-400 font-bold uppercase mb-1">
+                        Tipo
                       </label>
                       <select
-                        className="w-full bg-slate-50 dark:bg-slate-600 border border-slate-200 dark:border-slate-500 rounded p-2 text-xs text-slate-700 dark:text-white focus:outline-none focus:border-indigo-500 font-semibold"
+                        className="w-full bg-slate-50 dark:bg-slate-600/50 border border-slate-200 dark:border-slate-500/50 rounded px-2 py-1.5 text-[11px] text-slate-700 dark:text-white focus:outline-none focus:border-indigo-500 font-medium"
                         value={newFieldType}
                         onChange={(e) =>
                           onNewFieldTypeChange(e.target.value as any)
@@ -366,12 +358,12 @@ export function FieldInspector({
                     </div>
 
                     <div>
-                      <label className="block text-[10px] text-slate-500 dark:text-slate-400 font-bold uppercase mb-1">
+                      <label className="block text-[9px] text-slate-500 dark:text-slate-400 font-bold uppercase mb-1">
                         Valor Inicial
                       </label>
                       {newFieldType === "boolean" ? (
                         <select
-                          className="w-full bg-slate-50 dark:bg-slate-600 border border-slate-200 dark:border-slate-500 rounded p-2 text-xs text-slate-700 dark:text-white focus:outline-none focus:border-indigo-500 font-semibold"
+                          className="w-full bg-slate-50 dark:bg-slate-600/50 border border-slate-200 dark:border-slate-500/50 rounded px-2 py-1.5 text-[11px] text-slate-700 dark:text-white focus:outline-none focus:border-indigo-500 font-medium"
                           value={newFieldValue}
                           onChange={(e) => onNewFieldValueChange(e.target.value)}
                         >
@@ -383,7 +375,7 @@ export function FieldInspector({
                         <input
                           type="text"
                           placeholder="Valor inicial"
-                          className="w-full bg-slate-50 dark:bg-slate-600 border border-slate-200 dark:border-slate-500 rounded p-2 text-xs text-slate-800 dark:text-white placeholder-slate-400 dark:placeholder-slate-500 focus:outline-none focus:border-indigo-500 font-mono"
+                          className="w-full bg-slate-50 dark:bg-slate-600/50 border border-slate-200 dark:border-slate-500/50 rounded px-2 py-1.5 text-[11px] text-slate-800 dark:text-white placeholder-slate-400 dark:placeholder-slate-500 focus:outline-none focus:border-indigo-500 font-mono"
                           value={newFieldValue}
                           onChange={(e) => onNewFieldValueChange(e.target.value)}
                         />
@@ -393,26 +385,25 @@ export function FieldInspector({
 
                   <button
                     onClick={onAddNewField}
-                    className="bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-xs px-4 py-2 rounded-lg flex items-center gap-1.5 shadow-xs transition-colors cursor-pointer"
+                    className="bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-[11px] px-4 py-1.5 rounded-md flex items-center gap-1.5 shadow-xs transition-all cursor-pointer active:scale-95"
                   >
                     <Save className="w-3.5 h-3.5" />
-                    Agregar Campo a Firestore
+                    Agregar Campo
                   </button>
                 </div>
               ) : (
-                <>
+                <div className="w-full flex items-center justify-between">
                   <button
                     onClick={onToggleAddField}
-                    className="text-indigo-600 dark:text-indigo-400 text-xs font-bold flex items-center gap-1 hover:underline cursor-pointer"
+                    className="text-indigo-600 dark:text-indigo-400 text-[11px] font-bold flex items-center gap-1 hover:bg-indigo-50 dark:hover:bg-indigo-900/20 px-2.5 py-1.5 rounded-md transition-colors cursor-pointer border border-transparent hover:border-indigo-200 dark:hover:border-indigo-700/50"
                   >
-                    <Plus className="w-4 h-4" />
+                    <Plus className="w-3.5 h-3.5" />
                     Add New Field
                   </button>
-                  <span className="text-[10px] text-slate-400 dark:text-slate-500 font-medium italic">
-                    Editing {activeDocument.id} —{" "}
-                    {Object.keys(activeDocument.data || {}).length} fields total
+                  <span className="text-[9px] text-slate-400 dark:text-slate-500 font-medium">
+                    {Object.keys(activeDocument.data || {}).length} fields
                   </span>
-                </>
+                </div>
               )}
             </div>
           </div>

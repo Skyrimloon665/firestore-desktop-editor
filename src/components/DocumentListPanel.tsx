@@ -1,4 +1,4 @@
-import { Plus, RefreshCw, Info, FileText, ArrowRight, Terminal, FolderOpen, ChevronDown, ChevronRight } from "lucide-react";
+import { Plus, RefreshCw, FileText, ArrowRight, Terminal, FolderOpen, ChevronDown, ChevronRight, Search } from "lucide-react";
 import { useState } from "react";
 import type { DocData, ConnectionMode } from "../services/types";
 
@@ -44,23 +44,28 @@ export function DocumentListPanel({
     }
   };
   return (
-    <section className="w-80 border-r border-slate-800 bg-slate-900 text-slate-300 flex flex-col shrink-0">
-      <div className="p-4 border-b border-slate-800 bg-slate-900/50">
+    <section className="w-72 border-r border-slate-800 bg-slate-900 text-slate-300 flex flex-col shrink-0">
+      <div className="px-3 py-2 border-b border-slate-800">
         <button
           onClick={() => setShowPathInput((v) => !v)}
-          className="w-full flex items-center gap-1.5 text-[10px] uppercase font-bold tracking-widest text-slate-500 hover:text-slate-300 transition-colors cursor-pointer"
+          className="w-full flex items-center gap-1.5 text-[9px] uppercase font-bold tracking-widest text-slate-500 hover:text-slate-300 transition-colors cursor-pointer"
         >
           {showPathInput ? <ChevronDown className="w-3 h-3" /> : <ChevronRight className="w-3 h-3" />}
-          Root Collection Path
+          Ruta
+          {!showPathInput && collectionPath && (
+            <span className="ml-auto font-mono normal-case tracking-normal text-[9px] text-slate-600 truncate max-w-[140px]">
+              {collectionPath}
+            </span>
+          )}
         </button>
 
         {showPathInput && (
-          <div className="flex flex-col gap-3 mt-3">
-            <div className="flex gap-2">
+          <div className="flex flex-col gap-2 mt-2">
+            <div className="flex gap-1.5">
               <input
                 type="text"
                 placeholder="Ej: nombre-coleccion"
-                className="w-full bg-slate-800 border border-slate-700 text-white px-3 py-1.5 rounded text-xs focus:outline-none focus:ring-1 focus:ring-indigo-500 font-mono text-indigo-200 overflow-x-auto whitespace-nowrap"
+                className="w-full bg-slate-800/80 border border-slate-700/60 text-white px-2.5 py-1.5 rounded text-[11px] focus:outline-none focus:ring-1 focus:ring-indigo-500/50 font-mono text-indigo-200 overflow-x-auto whitespace-nowrap"
                 value={collectionPath}
                 onChange={(e) => onCollectionPathChange(e.target.value)}
                 onKeyDown={(e) => { if (e.key === "Enter") onFetchDocuments(); }}
@@ -69,51 +74,48 @@ export function DocumentListPanel({
               <button
                 onClick={onFetchDocuments}
                 disabled={isLoading}
-                className="bg-slate-700 hover:bg-slate-600 disabled:bg-slate-800 disabled:text-slate-600 p-2 rounded transition-all cursor-pointer text-white"
+                className="bg-slate-700/80 hover:bg-slate-600 disabled:bg-slate-800 disabled:text-slate-600 p-1.5 rounded transition-all cursor-pointer text-white"
                 title="Listar Documentos"
               >
                 <RefreshCw className={`w-3.5 h-3.5 ${isLoading ? "animate-spin" : ""}`} />
               </button>
             </div>
 
-            <div className="text-[10px] text-slate-400 bg-slate-800 p-2.5 rounded border border-slate-800/80 leading-snug flex items-start gap-1.5">
-              <Info className="w-3.5 text-indigo-400 shrink-0 mt-0.5" />
-              <span>
-                Ingrese la ruta de la colección o documento. Las rutas con
-                cantidad impar de segmentos listan documentos; las pares listan
-                subcolecciones.
-              </span>
+            <div className="text-[9px] text-slate-500 bg-slate-800/40 px-2.5 py-1.5 rounded border border-slate-700/40 leading-relaxed">
+              Segmentos impares listan documentos; pares listan subcolecciones.
             </div>
           </div>
         )}
       </div>
 
-      <div className="p-3 border-b border-slate-800/80 bg-slate-900 flex items-center justify-between gap-2">
-        <input
-          type="text"
-          placeholder="Filtrar ID de documento..."
-          className="flex-1 bg-slate-800 hover:bg-slate-700 border border-slate-700 rounded px-2.5 py-1.5 text-xs text-white placeholder-slate-500 focus:outline-none focus:ring-1 focus:ring-indigo-500"
-          value={searchFilter}
-          onChange={(e) => onSearchFilterChange(e.target.value)}
-        />
+      <div className="px-3 py-2 border-b border-slate-800/80 bg-slate-900 flex items-center justify-between gap-2">
+        <div className="relative flex-1">
+          <Search className="absolute left-2 top-1/2 -translate-y-1/2 w-3 h-3 text-slate-500" />
+          <input
+            type="text"
+            placeholder="Filtrar documentos..."
+            className="w-full bg-slate-800/60 hover:bg-slate-800 border border-slate-700/60 rounded pl-6 pr-2 py-1.5 text-[11px] text-white placeholder-slate-500 focus:outline-none focus:ring-1 focus:ring-indigo-500/50"
+            value={searchFilter}
+            onChange={(e) => onSearchFilterChange(e.target.value)}
+          />
+        </div>
         {connectionMode !== "none" && (
           <button
             onClick={onCreateDocument}
-            className="bg-slate-800 hover:bg-slate-700 border border-slate-700 text-slate-200 p-1.5 rounded text-xs shrink-0 flex items-center justify-center cursor-pointer transition-colors"
+            className="bg-slate-800/60 hover:bg-slate-700 border border-slate-700/60 text-slate-300 p-1.5 rounded shrink-0 flex items-center justify-center cursor-pointer transition-colors"
             title="Nuevo Documento"
           >
-            <Plus className="w-4 h-4" />
+            <Plus className="w-3.5 h-3.5" />
           </button>
         )}
       </div>
 
-      <div className="flex-1 overflow-y-auto p-3 space-y-1 bg-slate-900">
+      <div className="flex-1 overflow-y-auto py-1 space-y-0.5 bg-slate-900">
         {connectionMode === "none" ? (
           <div className="h-full flex flex-col items-center justify-center p-6 text-center">
             <FileText className="w-8 h-8 text-slate-700 mb-2" />
             <p className="text-xs text-slate-500">
-              Conéctese a una base de datos para listar documentos o active el
-              Modo Demo.
+              Conéctese a una base de datos o active el Modo Demo.
             </p>
           </div>
         ) : filteredDocs.length === 0 ? (
@@ -136,63 +138,59 @@ export function DocumentListPanel({
               <button
                 key={doc.id}
                 onClick={() => handleItemClick(doc)}
-                className={`w-full text-left px-3 py-2.5 rounded text-xs transition-all duration-150 flex flex-col gap-1 cursor-pointer ${
+                className={`w-full text-left text-xs transition-all duration-150 flex flex-col cursor-pointer ${
                   isActive
-                    ? "bg-indigo-600 text-white shadow-md font-bold border-l-4 border-indigo-300 ring-1 ring-indigo-500/50"
-                    : "bg-transparent text-slate-300 hover:bg-indigo-900/30 hover:text-white hover:border-l-4 hover:border-indigo-500/40 hover:pl-2.5"
+                    ? "bg-indigo-500/10 text-white border-l-2 border-indigo-400"
+                    : "text-slate-400 hover:bg-slate-800/60 hover:text-slate-200 border-l-2 border-transparent hover:border-l-2 hover:border-slate-600"
                 }`}
               >
-                <div className="flex items-center justify-between w-full">
-                  <span className="font-mono truncate flex-1 pr-2">
-                    {doc.id}
-                  </span>
-                  {isSubcollection ? (
-                    <FolderOpen className="w-3.5 h-3.5 shrink-0 text-cyan-400" />
-                  ) : (
-                    <ArrowRight
-                      className={`w-3.5 h-3.5 shrink-0 ${
-                        isActive ? "text-white" : "text-slate-600"
-                      }`}
-                    />
-                  )}
-                </div>
-                {isSubcollection ? (
-                  <div className="text-[10px] text-cyan-500 font-medium">
-                    Subcolección
-                  </div>
-                ) : (
-                  <div className="flex items-center justify-between text-[10px] text-slate-500">
-                    <span className={isActive ? "text-indigo-100" : "text-slate-500"}>
-                      {fieldCount} {fieldCount === 1 ? "campo" : "campos"}
+                <div className="px-3 py-1.5">
+                  <div className="flex items-center justify-between w-full">
+                    <span className="font-mono truncate flex-1 pr-2 text-[11px]">
+                      {doc.id}
                     </span>
-                    {doc.data["1"] !== undefined && (
-                      <span
-                        className={`text-[9px] font-bold px-1.5 py-0.2 rounded border ${
-                          isActive
-                            ? "bg-indigo-900/40 text-indigo-200 border-indigo-500/50"
-                            : "bg-amber-950/20 text-amber-500 border-amber-900/30"
+                    {isSubcollection ? (
+                      <FolderOpen className="w-3 h-3 shrink-0 text-cyan-500" />
+                    ) : (
+                      <ArrowRight
+                        className={`w-3 h-3 shrink-0 ${
+                          isActive ? "text-indigo-400" : "text-slate-600"
                         }`}
-                      >
-                        Numeric Key
-                      </span>
+                      />
                     )}
                   </div>
-                )}
+                  {isSubcollection ? (
+                    <div className="text-[9px] text-cyan-500/70 font-medium mt-0.5">
+                      Subcolección
+                    </div>
+                  ) : (
+                    <div className="flex items-center gap-2 mt-0.5">
+                      <span className={`text-[9px] ${isActive ? "text-slate-400" : "text-slate-600"}`}>
+                        {fieldCount} {fieldCount === 1 ? "campo" : "campos"}
+                      </span>
+                      {doc.data["1"] !== undefined && (
+                        <span className="text-[8px] font-medium text-amber-500/70 bg-amber-500/10 px-1 rounded border border-amber-500/20">
+                          #key
+                        </span>
+                      )}
+                    </div>
+                  )}
+                </div>
               </button>
             );
           })
         )}
       </div>
 
-          <div className="mt-auto p-3 border-t border-slate-800 bg-slate-950/30 shrink-0">
-            <div className="flex items-center justify-between text-[10px] text-slate-500 font-semibold">
-              <span className="flex items-center gap-1.5">
-                <Terminal className="w-3.5 h-3.5 text-slate-600" />
-                {navigator.platform}
-              </span>
-              <span className="text-emerald-500 font-mono">Ready</span>
-            </div>
-          </div>
+      <div className="mt-auto px-3 py-2 border-t border-slate-800 bg-slate-950/30 shrink-0">
+        <div className="flex items-center justify-between text-[9px] text-slate-600">
+          <span className="flex items-center gap-1">
+            <Terminal className="w-3 h-3 text-slate-600" />
+            {navigator.platform}
+          </span>
+          <span className="text-emerald-500/70 font-mono text-[9px]">Ready</span>
+        </div>
+      </div>
     </section>
   );
 }
