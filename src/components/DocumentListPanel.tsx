@@ -1,4 +1,4 @@
-import { Plus, RefreshCw, FileText, ArrowRight, Terminal, FolderOpen, ChevronDown, ChevronRight, Search, Database, Check } from "lucide-react";
+import { PanelRightClose, PanelRightOpen, Plus, RefreshCw, FileText, ArrowRight, Terminal, FolderOpen, ChevronDown, ChevronRight, Search, Database, Check } from "lucide-react";
 import { useState, useRef, useEffect } from "react";
 import type { DocData, ConnectionMode } from "../services/types";
 
@@ -39,6 +39,7 @@ export function DocumentListPanel({
   onCreateDocument,
   onRefreshRootCollections,
 }: DocumentListPanelProps) {
+  const [sidebarOpen, setSidebarOpen] = useState(true);
   const [showPathInput, setShowPathInput] = useState(false);
   const [dropdownOpen, setDropdownOpen] = useState(false);
   const [rootSearch, setRootSearch] = useState("");
@@ -89,6 +90,20 @@ export function DocumentListPanel({
     onFetchDocuments(fullPath);
   };
 
+  if (!sidebarOpen) {
+    return (
+      <section className="w-7 border-r border-slate-800 bg-slate-900 flex flex-col items-center pt-2 shrink-0">
+        <button
+          onClick={() => setSidebarOpen(true)}
+          className="text-slate-500 hover:text-indigo-400 transition-colors cursor-pointer"
+          title="Abrir panel"
+        >
+          <PanelRightOpen className="w-4 h-4" />
+        </button>
+      </section>
+    );
+  }
+
   return (
     <section className="w-72 border-r border-slate-800 bg-slate-900 text-slate-300 flex flex-col shrink-0">
       {connectionMode === "cloud" && rootCollections.length > 0 && (
@@ -97,10 +112,17 @@ export function DocumentListPanel({
             <span className="text-[9px] uppercase font-bold tracking-widest text-slate-500">Colección</span>
             <button
               onClick={onRefreshRootCollections}
-              className="ml-auto p-0.5 rounded text-slate-500 hover:text-indigo-400 transition-colors cursor-pointer"
+              className="p-0.5 rounded text-slate-500 hover:text-indigo-400 transition-colors cursor-pointer"
               title="Refrescar colecciones raíz"
             >
               <RefreshCw className="w-2.5 h-2.5" />
+            </button>
+            <button
+              onClick={() => setSidebarOpen(false)}
+              className="ml-auto p-0.5 rounded text-slate-500 hover:text-indigo-400 transition-colors cursor-pointer"
+              title="Cerrar panel"
+            >
+              <PanelRightClose className="w-3 h-3" />
             </button>
           </div>
           <div className="relative">
@@ -130,7 +152,7 @@ export function DocumentListPanel({
                     />
                   </div>
                 </div>
-                <div className="max-h-48 overflow-y-auto py-0.5">
+                <div className="max-h-48 overflow-y-auto py-0.5">                    
                   {filteredRoots.length === 0 ? (
                     <div className="px-3 py-4 text-center text-[10px] text-slate-500">
                       Sin resultados
@@ -169,7 +191,7 @@ export function DocumentListPanel({
         >
           {showPathInput ? <ChevronDown className="w-3 h-3" /> : <ChevronRight className="w-3 h-3" />}
           Ruta
-          {!showPathInput && collectionPath && (
+          {connectionMode !== "cloud" && !showPathInput && collectionPath && (
             <span className="ml-auto font-mono normal-case tracking-normal text-[9px] text-slate-600 truncate max-w-[140px]">
               {collectionPath}
             </span>
@@ -197,10 +219,6 @@ export function DocumentListPanel({
                 <RefreshCw className={`w-3.5 h-3.5 ${isLoading ? "animate-spin" : ""}`} />
               </button>
             </div>
-
-            <div className="text-[9px] text-slate-500 bg-slate-800/40 px-2.5 py-1.5 rounded border border-slate-700/40 leading-relaxed">
-              Segmentos impares: documentos. Pares: subcolecciones.
-            </div>
           </div>
         )}
       </div>
@@ -227,7 +245,7 @@ export function DocumentListPanel({
         )}
       </div>
 
-      <div className="flex-1 overflow-y-auto py-1 space-y-0.5 bg-slate-900">
+      <div className="flex-1 overflow-y-auto py-1 space-y-0.5 bg-slate-900 [&::-webkit-scrollbar]:w-1.5 [&::-webkit-scrollbar-thumb]:bg-slate-700 [&::-webkit-scrollbar-thumb]:rounded-full [&::-webkit-scrollbar-track]:bg-transparent">
         {connectionMode === "none" ? (
           <div className="h-full flex flex-col items-center justify-center p-6 text-center">
             <FileText className="w-8 h-8 text-slate-700 mb-2" />
