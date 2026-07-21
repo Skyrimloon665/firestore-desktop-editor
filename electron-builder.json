@@ -11,11 +11,11 @@
   ],
   "win": {
     "target": "portable",
-    "icon": "assets/icon.ico"
+    "icon": "assets/icon.png"
   },
   "mac": {
     "target": "dmg",
     "category": "public.app-category.developer-tools",
-    "icon": "assets/icon.icns"
+    "icon": "assets/icon.png"
   }
 }
