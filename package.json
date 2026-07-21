@@ -50,17 +50,17 @@
     },
     "files": [
       "dist/**/*",
-      "dist-electron/**/*"
+      "dist-electron/**/*",
+      "package.json"
     ],
     "win": {
-      "target": [
-        "portable"
-      ]
+      "target": "portable",
+      "icon": "assets/icon.png"
     },
     "mac": {
-      "target": [
-        "dmg"
-      ]
+      "target": "dmg",
+      "category": "public.app-category.developer-tools",
+      "icon": "assets/icon.png"
     }
   }
 }
