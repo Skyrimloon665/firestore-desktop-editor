@@ -1,5 +1,5 @@
 import type { ConnectionMode, ThemeMode } from "../services/types";
-import { Database, FolderOpen, Cpu, Sun, Moon, FileText, ClipboardCopy, ChevronRight, ExternalLink } from "lucide-react";
+import { Database, FolderOpen, Cpu, Sun, Moon, FileText, ClipboardCopy, ChevronRight } from "lucide-react";
 import type { ComponentType, SVGProps } from "react";
 
 interface ConnectionHeaderProps {
@@ -80,16 +80,6 @@ export function ConnectionHeader({
         >
           <ThemeIcon className="w-4 h-4" />
         </button>
-
-        <a
-          href="https://codeberg.org/Skyrimloon665/firestore-desktop-editor"
-          target="_blank"
-          rel="noopener noreferrer"
-          className="p-2 rounded-lg text-slate-500 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors cursor-pointer"
-          title="Codeberg Repo"
-        >
-          <ExternalLink className="w-4 h-4" />
-        </a>
 
         {connectionMode !== "none" ? (
           <div className="flex items-center gap-3 text-xs bg-slate-50 dark:bg-slate-700/50 border border-slate-200 dark:border-slate-600 px-3 py-1.5 rounded-lg select-all">
