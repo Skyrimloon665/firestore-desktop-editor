@@ -5,13 +5,16 @@ on:
     tags:
       - 'v*'
 
+permissions:
+  contents: write
+
 jobs:
   release:
     name: Compilar para ${{ matrix.os }}
-    runs-on: ${{ matrix.os }}
     strategy:
       matrix:
         os: [windows-latest, macos-latest]
+    runs-on: ${{ matrix.os }}
 
     steps:
       - name: Obtener código fuente
@@ -25,8 +28,23 @@ jobs:
       - name: Instalar dependencias
         run: npm ci
 
-      - name: Compilar y generar ejecutables
-        uses: samuelmeuli/action-electron-builder@v1
+      - name: Compilar frontend y Electron
+        run: npm run build
+
+      - name: Empaquetar con electron-builder
+        run: npx electron-builder --${{ matrix.os == 'windows-latest' && 'win' || 'mac' }} --publish never
+        env:
+          NODE_OPTIONS: --no-deprecation
+
+      - name: Subir artefactos a Release
+        uses: softprops/action-gh-release@v2
         with:
-          github_token: ${{ secrets.GITHUB_TOKEN }}
-          release: true
+          files: |
+            dist-packaged/*.exe
+            dist-packaged/*.dmg
+            dist-packaged/*.blockmap
+            dist-packaged/*.zip
+          draft: true
+          generate_release_notes: false
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

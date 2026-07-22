@@ -76,12 +76,6 @@
       ],
       "category": "public.app-category.developer-tools",
       "icon": "assets/icon.png"
-    },
-    "publish": {
-      "provider": "github",
-      "owner": "acortes",
-      "repo": "firestore-desktop-editor",
-      "releaseType": "draft"
     }
   }
 }
